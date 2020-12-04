@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "khaki",
+  "version": "1.0.0",
+  
+  "name": "Khaki",
+  "description": "Mod Description.",
+  "authors": [
+    "Me!"
+  ],
+  
+  "icon": "assets/khaki/icon.png",
+  "license": "No Licence.",
+  
+  "environment": "*",
+  
+  "entrypoints": {
+    "main": [
+      "valoeghese.khaki.Khaki"
+    ]
+  },
+  
+  "requires": {
+    "fabricloader": ">=0.4.0"
+  },
+  
+  "mixins": [
+    "khaki.mixins.json"
+  ]
+}
