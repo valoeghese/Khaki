@@ -30,11 +30,13 @@ public final class KhakiChunkGenerator extends ChunkGenerator {
 		this.seed = seed;
 		this.random = new ChunkRandom(seed);
 		this.surfaceDepthNoise = new OctaveSimplexNoiseSampler(this.random, IntStream.rangeClosed(-3, 0));
+		this.noiseGenerator = new KhakiNoiseGenerator(seed);
 	}
 
 	private final ChunkRandom random;
 	private final long seed;
 	private final NoiseSampler surfaceDepthNoise;
+	private final KhakiNoiseGenerator noiseGenerator;
 
 	public long getWorldSeed() {
 		return this.seed;
