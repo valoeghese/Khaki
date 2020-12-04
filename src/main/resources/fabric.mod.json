@@ -4,13 +4,13 @@
   "version": "1.0.0",
   
   "name": "Khaki",
-  "description": "Mod Description.",
+  "description": "River POC.",
   "authors": [
-    "Me!"
+    "Valoeghese"
   ],
   
   "icon": "assets/khaki/icon.png",
-  "license": "No Licence.",
+  "license": "LGPL v3",
   
   "environment": "*",
   
