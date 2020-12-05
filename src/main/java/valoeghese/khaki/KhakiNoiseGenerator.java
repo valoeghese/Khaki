@@ -31,7 +31,7 @@ public class KhakiNoiseGenerator {
 		OpenSimplexNoise continent2 = new OpenSimplexNoise(rand);
 
 		this.continentNoise = new LossyIntCache(512, (x, z) -> (int) (65 + 20 * (MathHelper.sin(x * 0.2f) + MathHelper.sin(z * 0.2f)) + 70 * continent.sample(x * 0.125, z * 0.125) + 20 * continent2.sample(x * 0.5, z * 0.5)));
-		this.positionData = new LossyIntCache(1024, (x, z) ->  {
+		this.positionData = new LossyIntCache(512, (x, z) ->  {
 			int result = 0;
 
 			if (this.getBaseHeight(x, z) <= SEA_LEVEL) {
@@ -52,7 +52,7 @@ public class KhakiNoiseGenerator {
 			return result;
 		});
 
-		this.rivers = new LossyIntCache(512, (x, z) -> {
+		this.rivers = new LossyIntCache(256, (x, z) -> {
 			if (this.getBaseHeight(x, z) > SEA_LEVEL) {
 				int result = 0;
 
@@ -130,6 +130,8 @@ public class KhakiNoiseGenerator {
 				return 0;
 			}
 		});
+		
+		this.chunkRivers = new LossyIntCache(1024);
 	}
 
 	private final long seed;
@@ -138,6 +140,7 @@ public class KhakiNoiseGenerator {
 	private final IntGridOperator continentNoise;
 	private final IntGridOperator positionData;
 	private final IntGridOperator rivers;
+	private final IntGridOperator chunkRivers;
 
 	private static final double redistribute(double f) {
 		double c = (f - 70.0) / 120.0;
