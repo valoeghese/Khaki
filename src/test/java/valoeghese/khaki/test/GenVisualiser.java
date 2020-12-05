@@ -41,17 +41,18 @@ public final class GenVisualiser extends Application {
 	private static void drawTo(KhakiNoiseGenerator noiseGen, PixelWriter writer, int width, int height) {
 		for (int x = 0; x < width; ++x) {
 			for (int z = 0; z < height; ++z) {
-				//writer.setColor(x, z, getColourBW(noiseGen.getBaseHeight(x / SCALE, z / SCALE), 80));
-				writer.setColor(x, z, Color.grayRgb(70 * (noiseGen.getPositionData(x >> SCALE, z >> SCALE) & 3)));
+				writer.setColor(x, z, getColour(255 * (noiseGen.getRiverData(x >> SCALE, z >> SCALE) > 0 ? 1 : 0), noiseGen.getBaseHeight(x >> SCALE, z >> SCALE), 80));
+				//writer.setColor(x, z, Color.grayRgb(70 * (noiseGen.getPositionData(x >> SCALE, z >> SCALE) & 3)));
+//				writer.setColor(x, z, Color.grayRgb(255 * (noiseGen.getRiverData(x >> SCALE, z >> SCALE) > 0 ? 1 : 0)));
 			}
 		}
 	}
 
-	static Color getColourBW(double height, double seaLevel) {
+	static Color getColour(int red, double height, double seaLevel) {
 		if (height > 255) height = 255;
 		else if (height < 0) height = 0;
 
-		return height > seaLevel ? Color.rgb(0, (int) height, 0) : Color.rgb(0, 0, (int) height);
+		return height > seaLevel ? Color.rgb(red, (int) height, 0) : Color.rgb(red, 0, (int) height);
 	}
 
 	static Color getColour(double height, int beachHeightOffset, int x, int z) {

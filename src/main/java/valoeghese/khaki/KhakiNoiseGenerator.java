@@ -86,7 +86,7 @@ public class KhakiNoiseGenerator {
 
 									int newHeight = this.getBaseHeight(nextX, nextZ);
 
-									if (newHeight > currentHeight) {
+									if (newHeight > currentHeight + 2) {
 										optionsX.add(nextX);
 										optionsZ.add(nextZ);
 										directions.add(direction);
@@ -150,6 +150,10 @@ public class KhakiNoiseGenerator {
 
 	public int getPositionData(int megaChunkX, int megaChunkZ) {
 		return this.positionData.get(megaChunkX, megaChunkZ);
+	}
+
+	public int getRiverData(int megaChunkX, int megaChunkZ) {
+		return this.rivers.get(megaChunkX, megaChunkZ);
 	}
 
 	public static final int SEA_LEVEL = 80;
