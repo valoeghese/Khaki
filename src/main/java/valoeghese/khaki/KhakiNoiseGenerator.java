@@ -35,9 +35,9 @@ public class KhakiNoiseGenerator {
 					if (NoiseUtils.random(x, z, (int) this.seed, 0b111) == 0) {
 						result |= 2; // river start
 					}
-
-					result |= NoiseUtils.random(x, z, 1 + (int) this.seed, 0b111111111100); // 0b 1111 1111 1100. 6 more bits of random data
 				}
+
+				result |= NoiseUtils.random(x, z, 1 + (int) this.seed, 0b111111111100); // 0b 1111 1111 1100. 6 more bits of random data
 			}
 
 			return result;
