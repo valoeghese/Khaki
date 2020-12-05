@@ -66,8 +66,6 @@ public class KhakiNoiseGenerator {
 						if ((this.getPositionData(xPos, zPos) & 2) == 2) {
 							result <<= 4; // shift existing data: 2 positions (0b0000-0b1111)
 
-							int prX = xPos;
-							int prZ = zPos;
 							int rX = xPos;
 							int rZ = zPos;
 							int currentHeight = this.getBaseHeight(rX, rZ);
@@ -111,8 +109,6 @@ public class KhakiNoiseGenerator {
 									break;
 								}
 
-								prX = rX;
-								prZ = rZ;
 								rX = optionsX.getInt(index);
 								rZ = optionsZ.getInt(index);
 								cache = direction;
