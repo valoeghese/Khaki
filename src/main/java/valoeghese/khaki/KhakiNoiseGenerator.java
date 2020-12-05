@@ -1,7 +1,13 @@
 package valoeghese.khaki;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.util.math.MathHelper;
 import valoeghese.khaki.noise.NoiseUtils;
 import valoeghese.khaki.noise.OpenSimplexNoise;
@@ -45,6 +51,81 @@ public class KhakiNoiseGenerator {
 
 			return result;
 		});
+
+		this.rivers = new LossyIntCache(512, (x, z) -> {
+			if (this.getBaseHeight(x, z) > SEA_LEVEL) {
+				int result = 0;
+
+				for (int xo = -5; xo <= 5; ++xo) {
+					int xPos = x + xo;
+
+					for (int zo = -5; zo <= 5; ++zo) {
+						int zPos = z + zo;
+
+						// if river start
+						if ((this.getPositionData(xPos, zPos) & 2) == 2) {
+							result <<= 4; // shift existing data: 2 positions (0b0000-0b1111)
+
+							int prX = xPos;
+							int prZ = zPos;
+							int rX = xPos;
+							int rZ = zPos;
+							int currentHeight = this.getBaseHeight(rX, rZ);
+							GridDirection cache = null;
+							Random riverRand = new Random(rX * 5724773 + rZ);
+
+							// trace river path
+							for (int i = 0; i < 5; ++i) {
+								IntList optionsX = new IntArrayList();
+								IntList optionsZ = new IntArrayList();
+								List<GridDirection> directions = new ArrayList<>();
+
+								// go through directions
+
+								for (GridDirection direction : GridDirection.values()) {
+									int nextX = rX + direction.xOff;
+									int nextZ = rZ + direction.zOff;
+
+									int newHeight = this.getBaseHeight(nextX, nextZ);
+
+									if (newHeight > currentHeight) {
+										optionsX.add(nextX);
+										optionsZ.add(nextZ);
+										directions.add(direction);
+									}
+								}
+
+								if (optionsX.isEmpty()) {
+									break; // no new positions
+								}
+
+								int index = riverRand.nextInt(optionsX.size());
+								GridDirection direction = directions.get(index);
+
+								if (rX == x && rZ == z) {
+									if (direction == null && cache == null) {
+										break;
+									}
+
+									result |= GridDirection.serialise(cache, direction);
+									break;
+								}
+
+								prX = rX;
+								prZ = rZ;
+								rX = optionsX.getInt(index);
+								rZ = optionsZ.getInt(index);
+								cache = direction;
+							}
+						}
+					}
+				}
+
+				return result;
+			} else { // TODO river end traceback to start?
+				return 0;
+			}
+		});
 	}
 
 	private final long seed;
@@ -52,6 +133,7 @@ public class KhakiNoiseGenerator {
 
 	private final IntGridOperator continentNoise;
 	private final IntGridOperator positionData;
+	private final IntGridOperator rivers;
 
 	private static final double redistribute(double f) {
 		double c = (f - 70.0) / 120.0;
@@ -77,3 +159,79 @@ public class KhakiNoiseGenerator {
 	public static final int SEA_LEVEL = 80;
 }
 
+enum GridDirection {
+	UP(0, 0, 1),
+	RIGHT(1, 1, 0),
+	DOWN(2, 0, -1),
+	LEFT(3, -1, 0);
+
+	private GridDirection(int id, int xOff, int zOff) {
+		this.id = id;
+		this.xOff = xOff;
+		this.zOff = zOff;
+	}
+
+	final int id;
+	final int xOff, zOff;
+
+	GridDirection reverse() {
+		switch (this) {
+		case UP:
+			return DOWN;
+		case DOWN:
+			return UP;
+		case LEFT:
+			return RIGHT;
+		case RIGHT:
+			return LEFT;
+		default:
+			return null;
+		}
+	}
+
+	static int serialise(GridDirection from, GridDirection to) {
+		// both cannot be null.
+		int result = 0;
+
+		if (from == null) {
+			result |= to.id;
+			result <<= 2;
+			result |= GridShape.NODE.id;
+		} else if (to == null) {
+			result |= from.id;
+			result <<= 2;
+			result |= GridShape.NODE.id;
+		} else if (from == to.reverse()) {
+			result |= from.id;
+			result <<= 2;
+			result |= GridShape.LINE.id;
+		} else {
+			result |= from.id;
+			result <<= 2;
+			result |= (to.id > from.id || (from.id == 3 && to.id == 0)) ? GridShape.CLOCKWISE.id : GridShape.ANTICLOCKWISE.id;
+		}
+
+		return result;
+	}
+
+	static final Int2ObjectMap<GridDirection> BY_ID = new Int2ObjectArrayMap<>();
+
+	static {
+		for (GridDirection d : GridDirection.values()) {
+			BY_ID.put(d.id, d);
+		}
+	}
+}
+
+enum GridShape {
+	NODE(0),
+	LINE(1),
+	CLOCKWISE(2),
+	ANTICLOCKWISE(3);
+
+	private GridShape(int id) {
+		this.id = id;
+	}
+
+	final int id;
+}
