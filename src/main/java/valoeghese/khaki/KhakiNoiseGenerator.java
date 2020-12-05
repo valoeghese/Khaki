@@ -18,7 +18,7 @@ public class KhakiNoiseGenerator {
 		OpenSimplexNoise continent = new OpenSimplexNoise(rand);
 		OpenSimplexNoise continent2 = new OpenSimplexNoise(rand);
 
-		this.continentNoise = new LossyDoubleCache(1024, (x, z) -> 65 + 20 * (MathHelper.sin(x * 0.2f) + MathHelper.sin(z * 0.2f)) + 85 * continent.sample(x * 0.125, z * 0.125) + 30 * continent2.sample(x * 0.5, z * 0.5));
+		this.continentNoise = new LossyDoubleCache(1024, (x, z) -> 65 + 20 * (MathHelper.sin(x * 0.2f) + MathHelper.sin(z * 0.2f)) + 70 * continent.sample(x * 0.125, z * 0.125) + 20 * continent2.sample(x * 0.5, z * 0.5));
 	}
 
 	private final long seed;
@@ -31,7 +31,14 @@ public class KhakiNoiseGenerator {
 	}
 
 	public int getBaseHeight(int megaChunkX, int megaChunkZ) {
-		return (int) this.continentNoise.get(megaChunkX, megaChunkZ);
+		int result = (int) this.continentNoise.get(megaChunkX, megaChunkZ);
+		if (result < 20) {
+			return 20;
+		}
+		if (result > 140) {
+			return 140;
+		}
+		return result;
 	}
 }
 
