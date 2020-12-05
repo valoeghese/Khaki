@@ -56,11 +56,12 @@ public class KhakiNoiseGenerator {
 
 	public int getBaseHeight(int megaChunkX, int megaChunkZ) {
 		int result = (int) this.continentNoise.get(megaChunkX, megaChunkZ);
+		// clamp base height from 20 to 150
 		if (result < 20) {
 			return 20;
 		}
-		if (result > 140) {
-			return 140;
+		if (result > 150) {
+			return 150;
 		}
 		return result;
 	}
