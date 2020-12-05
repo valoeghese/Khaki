@@ -5,9 +5,7 @@ import java.util.Random;
 import net.minecraft.util.math.MathHelper;
 import valoeghese.khaki.noise.NoiseUtils;
 import valoeghese.khaki.noise.OpenSimplexNoise;
-import valoeghese.khaki.util.DoubleGridOperator;
 import valoeghese.khaki.util.IntGridOperator;
-import valoeghese.khaki.util.LossyDoubleCache;
 import valoeghese.khaki.util.LossyIntCache;
 
 /**
@@ -16,12 +14,17 @@ import valoeghese.khaki.util.LossyIntCache;
 public class KhakiNoiseGenerator {
 	public KhakiNoiseGenerator(long seed) {
 		this.seed = seed;
+
+		// Multiplication by 0 bad
+		int piseed = (int) (seed >> 32);
+		this.iseed = piseed == 0 ? 1 : piseed;
+
 		Random rand = new Random();
 
 		OpenSimplexNoise continent = new OpenSimplexNoise(rand);
 		OpenSimplexNoise continent2 = new OpenSimplexNoise(rand);
 
-		this.continentNoise = new LossyDoubleCache(1024, (x, z) -> 65 + 20 * (MathHelper.sin(x * 0.2f) + MathHelper.sin(z * 0.2f)) + 70 * continent.sample(x * 0.125, z * 0.125) + 20 * continent2.sample(x * 0.5, z * 0.5));
+		this.continentNoise = new LossyIntCache(1024, (x, z) -> (int) (65 + 20 * (MathHelper.sin(x * 0.2f) + MathHelper.sin(z * 0.2f)) + 70 * continent.sample(x * 0.125, z * 0.125) + 20 * continent2.sample(x * 0.5, z * 0.5)));
 		this.positionData = new LossyIntCache(1024, (x, z) ->  {
 			int result = 0;
 
@@ -32,12 +35,12 @@ public class KhakiNoiseGenerator {
 						|| this.getBaseHeight(x, z - 1) > SEA_LEVEL)  {
 					result |= 1; // coast
 
-					if (NoiseUtils.random(x, z, (int) this.seed, 0b111) == 0) {
+					if (NoiseUtils.random(x, z, this.iseed, 0b111) == 0) {
 						result |= 2; // river start
 					}
 				}
 
-				result |= NoiseUtils.random(x, z, 1 + (int) this.seed, 0b111111111100); // 0b 1111 1111 1100. 6 more bits of random data
+				result |= NoiseUtils.random(x, z, 1 + this.iseed, 0b111111111100); // 0b 1111 1111 1100. 6 more bits of random data
 			}
 
 			return result;
@@ -45,8 +48,9 @@ public class KhakiNoiseGenerator {
 	}
 
 	private final long seed;
+	private final int iseed;
 
-	private final DoubleGridOperator continentNoise;
+	private final IntGridOperator continentNoise;
 	private final IntGridOperator positionData;
 
 	private static final double redistribute(double f) {
@@ -55,7 +59,7 @@ public class KhakiNoiseGenerator {
 	}
 
 	public int getBaseHeight(int megaChunkX, int megaChunkZ) {
-		int result = (int) this.continentNoise.get(megaChunkX, megaChunkZ);
+		int result = this.continentNoise.get(megaChunkX, megaChunkZ);
 		// clamp base height from 20 to 150
 		if (result < 20) {
 			return 20;
@@ -64,6 +68,10 @@ public class KhakiNoiseGenerator {
 			return 150;
 		}
 		return result;
+	}
+
+	public int getPositionData(int megaChunkX, int megaChunkZ) {
+		return this.positionData.get(megaChunkX, megaChunkZ);
 	}
 
 	public static final int SEA_LEVEL = 80;

@@ -97,11 +97,12 @@ public final class NoiseUtils {
 	}
 
 	public static int random(int x, int y, int seed, int mask) {
-		seed = 375462423 * seed + 672456235;
+		// seed *= seed * 6364136223846793005L + 1442695040888963407L are constants in biome layers
+		seed *= 375462423 * seed + 672456235;
 		seed += x;
-		seed = 375462423 * seed + 672456235;
+		seed *= 375462423 * seed + 672456235;
 		seed += y;
-		seed = 375462423 * seed + 672456235;
+
 		return seed & mask;
 	}
 

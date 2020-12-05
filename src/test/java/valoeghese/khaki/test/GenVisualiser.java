@@ -41,7 +41,8 @@ public final class GenVisualiser extends Application {
 	private static void drawTo(KhakiNoiseGenerator noiseGen, PixelWriter writer, int width, int height) {
 		for (int x = 0; x < width; ++x) {
 			for (int z = 0; z < height; ++z) {
-				writer.setColor(x, z, getColourBW(noiseGen.getBaseHeight(x / SCALE, z / SCALE), 80));
+				//writer.setColor(x, z, getColourBW(noiseGen.getBaseHeight(x / SCALE, z / SCALE), 80));
+				writer.setColor(x, z, Color.grayRgb(70 * (noiseGen.getPositionData(x / SCALE, z / SCALE) & 3)));
 			}
 		}
 	}
