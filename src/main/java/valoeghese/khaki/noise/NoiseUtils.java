@@ -98,6 +98,7 @@ public final class NoiseUtils {
 
 	public static int random(int x, int y, int seed, int mask) {
 		// seed *= seed * 6364136223846793005L + 1442695040888963407L are constants in biome layers
+		// this seems to work fine. I have had with some variatns of this times where seems to be always one value but hooopefully this is fine
 		seed *= 375462423 * seed + 672456235;
 		seed += x;
 		seed *= 375462423 * seed + 672456235;

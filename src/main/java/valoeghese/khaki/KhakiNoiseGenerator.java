@@ -24,7 +24,7 @@ public class KhakiNoiseGenerator {
 		OpenSimplexNoise continent = new OpenSimplexNoise(rand);
 		OpenSimplexNoise continent2 = new OpenSimplexNoise(rand);
 
-		this.continentNoise = new LossyIntCache(1024, (x, z) -> (int) (65 + 20 * (MathHelper.sin(x * 0.2f) + MathHelper.sin(z * 0.2f)) + 70 * continent.sample(x * 0.125, z * 0.125) + 20 * continent2.sample(x * 0.5, z * 0.5)));
+		this.continentNoise = new LossyIntCache(512, (x, z) -> (int) (65 + 20 * (MathHelper.sin(x * 0.2f) + MathHelper.sin(z * 0.2f)) + 70 * continent.sample(x * 0.125, z * 0.125) + 20 * continent2.sample(x * 0.5, z * 0.5)));
 		this.positionData = new LossyIntCache(1024, (x, z) ->  {
 			int result = 0;
 

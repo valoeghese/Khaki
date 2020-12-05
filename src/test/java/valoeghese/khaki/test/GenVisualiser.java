@@ -79,6 +79,6 @@ public final class GenVisualiser extends Application {
 		return newmin + value * (newmax - newmin);
 	}
 
-	private static final int SCALE = 8;
+	private static final int SCALE = 32;
 	private static final int WIDTH = 1000, HEIGHT = 800;
 }
