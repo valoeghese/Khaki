@@ -42,7 +42,7 @@ public final class GenVisualiser extends Application {
 		for (int x = 0; x < width; ++x) {
 			for (int z = 0; z < height; ++z) {
 				//writer.setColor(x, z, getColourBW(noiseGen.getBaseHeight(x / SCALE, z / SCALE), 80));
-				writer.setColor(x, z, Color.grayRgb(70 * (noiseGen.getPositionData(x / SCALE, z / SCALE) & 3)));
+				writer.setColor(x, z, Color.grayRgb(70 * (noiseGen.getPositionData(x >> SCALE, z >> SCALE) & 3)));
 			}
 		}
 	}
@@ -79,6 +79,6 @@ public final class GenVisualiser extends Application {
 		return newmin + value * (newmax - newmin);
 	}
 
-	private static final int SCALE = 32;
+	private static final int SCALE = 4;
 	private static final int WIDTH = 1000, HEIGHT = 800;
 }
