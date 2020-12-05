@@ -94,6 +94,14 @@ public class KhakiNoiseGenerator {
 								}
 
 								if (optionsX.isEmpty()) {
+									if (rX == x && rZ == z) {
+										if (cache == null) {
+											break;
+										}
+
+										result |= GridDirection.serialise(cache, null);
+									}
+
 									break; // no new positions
 								}
 
