@@ -6,7 +6,6 @@ import java.util.Random;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import valoeghese.khaki.noise.NoiseUtils;
 import valoeghese.khaki.noise.OpenSimplexNoise;
@@ -154,24 +153,24 @@ public class KhakiNoiseGenerator {
 			int megaChunkZ = (z >> 4);
 			int riverData = this.getRiverData(megaChunkX, megaChunkZ);
 			int result = 0;
+			double[] edgeData = new double[2];
 			GridDirection[] currentRiverData = new GridDirection[2];
 
 			while (riverData > 0) {
 				GridDirection.deserialise(currentRiverData, riverData & 0b1111);
 
-				// todo: not this
-				// Actual method to use should be this
-				// 1. get position along edge 1
-				// 2. get position along edge 2
-				double offset1a = this.offsets.get(megaChunkX + currentRiverData[0].xOff, megaChunkZ + currentRiverData[0].zOff);
-				double offset1b = this.offsets.get(megaChunkX + currentRiverData[0].xOff + 32, megaChunkZ + currentRiverData[0].zOff);
-				double startX = ((megaChunkX + currentRiverData[0].xOff) << 8) + 256 * offset1a;
-				double startZ = ((megaChunkZ + currentRiverData[0].zOff) << 8) + 256 * offset1b;
+				if (currentRiverData[0] != currentRiverData[1]) {
+					// 1. get position along edge 1
+					edgePos(edgeData, currentRiverData[0], megaChunkX, megaChunkZ);
+					double startX = edgeData[0];
+					double startZ = edgeData[1];
 
-				double offset2a = this.offsets.get(megaChunkX + currentRiverData[1].xOff, megaChunkZ + currentRiverData[1].zOff);
-				double offset2b = this.offsets.get(megaChunkX + currentRiverData[1].xOff + 32, megaChunkZ + currentRiverData[1].zOff);
-				double endX = ((megaChunkX + currentRiverData[1].xOff) << 8) + 256 * offset2a;
-				double endZ = ((megaChunkZ + currentRiverData[1].zOff) << 8) + 256 * offset2b;
+					// 2. get position along edge 2
+					edgePos(edgeData, currentRiverData[1], megaChunkX, megaChunkZ);
+					double endX = edgeData[0];
+					double endZ = edgeData[1];
+
+				}
 
 				riverData >>= 4;
 			}
@@ -214,23 +213,48 @@ public class KhakiNoiseGenerator {
 		return this.rivers.get(megaChunkX, megaChunkZ);
 	}
 
+	private void edgePos(double position[], GridDirection direction, int megaChunkX, int megaChunkZ) {
+		// Note: DOWN and LEFT are owned by the square. Since origin is bottom left corner.
+		if (direction.horizontal) {
+			double offset = this.offsets.get(megaChunkX + direction.xOff, megaChunkZ + direction.zOff);
+			position[1] = megaChunkZ + offset;
+
+			if (direction == GridDirection.RIGHT) {
+				position[0] = ((megaChunkX + 1) << 8);
+			} else { // left
+				position[0] = (megaChunkX << 8);
+			}
+		} else {
+			// horizontal edges (in vertical edges from centre) always has a +32 offset to x
+			double offset = this.offsets.get(megaChunkX + direction.xOff + 32, megaChunkZ + direction.zOff);
+			position[0] = megaChunkX + offset;
+
+			if (direction == GridDirection.UP) {
+				position[1] = ((megaChunkZ + 1) << 8);
+			} else { // left
+				position[1] = (megaChunkZ << 8);
+			}
+		}
+	}
 	public static final int SEA_LEVEL = 80;
 }
 
 enum GridDirection {
-	UP(0, 0, 1),
-	RIGHT(1, 1, 0),
-	DOWN(2, 0, -1),
-	LEFT(3, -1, 0);
+	UP(0, 0, 1, false),
+	RIGHT(1, 1, 0, true),
+	DOWN(2, 0, -1, false),
+	LEFT(3, -1, 0, true);
 
-	private GridDirection(int id, int xOff, int zOff) {
+	private GridDirection(int id, int xOff, int zOff, boolean horizontal) {
 		this.id = id;
 		this.xOff = xOff;
 		this.zOff = zOff;
+		this.horizontal = horizontal;
 	}
 
 	final int id;
 	final int xOff, zOff;
+	final boolean horizontal;
 
 	GridDirection reverse() {
 		switch (this) {
@@ -250,28 +274,28 @@ enum GridDirection {
 	static void deserialise(GridDirection[] directions, int number) {
 		int iShape = number & 0b11;
 		number >>= 2;
-		number &= 0b11;
+				number &= 0b11;
 
-		directions[0] = BY_ID[number];
+				directions[0] = BY_ID[number];
 
-		GridShape shape = GridShape.BY_ID[iShape];
-		
-		switch (shape) {
-		case ANTICLOCKWISE:
-			directions[1] = BY_ID[(number - 1) & 0b11];
-			break;
-		case CLOCKWISE:
-			directions[1] = BY_ID[(number + 1) & 0b11];
-			break;
-		case LINE:
-			directions[1] = directions[0].reverse();
-			break;
-		case NODE:
-			directions[1] = directions[0];
-			break;
-		default:
-			throw new NullPointerException("Impossible error. Notify me (valoeghese) Immediately!. Debug Data: IShape = " + iShape + ", Direction = " + number + ", Array Size = " + directions.length);
-		}
+				GridShape shape = GridShape.BY_ID[iShape];
+
+				switch (shape) {
+				case ANTICLOCKWISE:
+					directions[1] = BY_ID[(number - 1) & 0b11];
+					break;
+				case CLOCKWISE:
+					directions[1] = BY_ID[(number + 1) & 0b11];
+					break;
+				case LINE:
+					directions[1] = directions[0].reverse();
+					break;
+				case NODE:
+					directions[1] = directions[0];
+					break;
+				default:
+					throw new NullPointerException("Impossible error. Notify me (valoeghese) Immediately!. Debug Data: IShape = " + iShape + ", Direction = " + number + ", Array Size = " + directions.length);
+				}
 	}
 
 	static int serialise(GridDirection from, GridDirection to) {
