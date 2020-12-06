@@ -130,8 +130,19 @@ public class KhakiNoiseGenerator {
 				return 0;
 			}
 		});
-		
-		this.chunkRivers = new LossyIntCache(1024);
+
+		this.chunkRivers = new LossyIntCache(1024, (x, z) -> {
+			int megaChunkX = (x >> 4);
+			int megaChunkZ = (z >> 4);
+			int riverData = this.getRiverData(megaChunkX, megaChunkZ);
+
+			while (riverData > 0) {
+				int currentRiverData = riverData & 0b1111;
+				
+				riverData >>= 4;
+			}
+			return 0;
+		});
 	}
 
 	private final long seed;
