@@ -228,24 +228,30 @@ public class KhakiNoiseGenerator {
 	private void edgePos(double position[], GridDirection direction, int megaChunkX, int megaChunkZ) {
 		// Note: DOWN and LEFT are owned by the square. Since origin is bottom left corner.
 		if (direction.horizontal) {
-			double offset = this.offsets.get(megaChunkX + direction.xOff, megaChunkZ + direction.zOff);
-			position[1] = megaChunkZ + offset;
+			double offset;
 
 			if (direction == GridDirection.RIGHT) {
 				position[0] = ((megaChunkX + 1) << 8);
+				offset = this.offsets.get(megaChunkX + 1, megaChunkZ); // next square's left
 			} else { // left
 				position[0] = (megaChunkX << 8);
+				offset = this.offsets.get(megaChunkX, megaChunkZ); // this square's left
 			}
+
+			position[1] = megaChunkZ + offset;
 		} else {
 			// horizontal edges (in vertical edges from centre) always has a +32 offset to x
-			double offset = this.offsets.get(megaChunkX + direction.xOff + 32, megaChunkZ + direction.zOff);
-			position[0] = megaChunkX + offset;
+			double offset;
 
 			if (direction == GridDirection.UP) {
 				position[1] = ((megaChunkZ + 1) << 8);
+				offset = this.offsets.get(megaChunkX + 32, megaChunkZ + 1); // next square's down
 			} else { // left
 				position[1] = (megaChunkZ << 8);
+				offset = this.offsets.get(megaChunkX + 32, megaChunkZ); // this square's down
 			}
+
+			position[0] = megaChunkX + offset;
 		}
 	}
 	public static final int SEA_LEVEL = 80;
