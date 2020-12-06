@@ -1,7 +1,7 @@
 package valoeghese.khaki.util;
 
 public class GridUtils {
-	public static boolean isNearLineBetween(double startX, double startZ, double endX, double endZ, int x, int z, int threshold) {
+	public static double distanceLineBetween(double startX, double startZ, double endX, double endZ, int x, int z) {
 		double dx = endX - startX;
 		double dz = endZ - startZ;
 		
@@ -27,6 +27,6 @@ public class GridUtils {
 
 		double m = dz / dx;
 		double targetZ = m * x + startZ - m * startX;
-		return Math.abs(z - targetZ) < threshold;
+		return Math.abs(z - targetZ);
 	}
 }
