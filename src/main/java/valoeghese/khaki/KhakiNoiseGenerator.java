@@ -160,6 +160,9 @@ public class KhakiNoiseGenerator {
 				GridDirection.deserialise(currentRiverData, riverData & 0b1111);
 
 				// todo: not this
+				// Actual method to use should be this
+				// 1. get position along edge 1
+				// 2. get position along edge 2
 				double offset1a = this.offsets.get(megaChunkX + currentRiverData[0].xOff, megaChunkZ + currentRiverData[0].zOff);
 				double offset1b = this.offsets.get(megaChunkX + currentRiverData[0].xOff + 32, megaChunkZ + currentRiverData[0].zOff);
 				double startX = ((megaChunkX + currentRiverData[0].xOff) << 8) + 256 * offset1a;
