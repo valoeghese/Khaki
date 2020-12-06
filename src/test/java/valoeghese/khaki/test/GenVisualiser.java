@@ -41,13 +41,22 @@ public final class GenVisualiser extends Application {
 	private static void drawTo(KhakiNoiseGenerator noiseGen, PixelWriter writer, int width, int height) {
 		for (int x = 0; x < width; ++x) {
 			for (int z = 0; z < height; ++z) {
-				writer.setColor(x, z, noiseGen.checkForRivers(x >> SCALE, z >> SCALE) > 0 ? Color.WHITE : Color.BLACK);
+				writer.setColor(x, z, visualiseChunkRivers(x >> SCALE, z >> SCALE, noiseGen));
 //				writer.setColor(x, z, GridUtils.isNearLineBetween(928, 898, 345, -45, x, z, 4) ? Color.WHITE : Color.BLACK);
 //				writer.setColor(x, z, getColour(255 * (noiseGen.getRiverData(x >> SCALE, z >> SCALE) > 0 ? 1 : 0), noiseGen.getBaseHeight(x >> SCALE, z >> SCALE), 80));
 				//writer.setColor(x, z, Color.grayRgb(70 * (noiseGen.getPositionData(x >> SCALE, z >> SCALE) & 3)));
 //				writer.setColor(x, z, Color.grayRgb(255 * (noiseGen.getRiverData(x >> SCALE, z >> SCALE) > 0 ? 1 : 0)));
 			}
 		}
+	}
+
+	private static Color visualiseChunkRivers(int x, int z, KhakiNoiseGenerator noiseGen) {
+		int red = noiseGen.checkForRivers(x, z) > 0 ? 255 : 0;
+		int megaX = (x >> 4);
+		int megaZ = (z >> 4);
+		int green = noiseGen.getBaseHeight(megaX, megaZ);
+		int blue = noiseGen.getRiverData(megaX, megaZ) > 0 ? 255 : 0;
+		return Color.rgb(red, green, blue);
 	}
 
 	static Color getColour(int red, double height, double seaLevel) {
