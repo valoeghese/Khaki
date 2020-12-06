@@ -57,10 +57,10 @@ public class KhakiNoiseGenerator {
 			if (this.getBaseHeight(x, z) > SEA_LEVEL) {
 				int result = 0;
 
-				for (int xo = -6; xo <= 6; ++xo) {
+				for (int xo = -RIVER_SEARCH_RAD; xo <= RIVER_SEARCH_RAD; ++xo) {
 					int xPos = x + xo;
 
-					for (int zo = -6; zo <= 6; ++zo) {
+					for (int zo = -RIVER_SEARCH_RAD; zo <= RIVER_SEARCH_RAD; ++zo) {
 						int zPos = z + zo;
 
 						// if river start
@@ -140,7 +140,7 @@ public class KhakiNoiseGenerator {
 		Random riverRand = new Random(rX * 5724773 + rZ);
 
 		// trace river path
-		for (int i = 0; i < 6; ++i) {
+		for (int i = 0; i < RIVER_SEARCH_RAD; ++i) {
 			IntList optionsXPreferred = new IntArrayList();
 			IntList optionsZPreferred = new IntArrayList();
 			List<GridDirection> directionsPreferred = new ArrayList<>();
@@ -264,7 +264,9 @@ public class KhakiNoiseGenerator {
 			position[0] = megaChunkX + offset;
 		}
 	}
+
 	public static final int SEA_LEVEL = 80;
+	public static final int RIVER_SEARCH_RAD = 8;
 }
 
 enum GridDirection {
