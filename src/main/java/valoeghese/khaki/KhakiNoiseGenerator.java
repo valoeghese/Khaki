@@ -10,6 +10,7 @@ import net.minecraft.util.math.MathHelper;
 import valoeghese.khaki.noise.NoiseUtils;
 import valoeghese.khaki.noise.OpenSimplexNoise;
 import valoeghese.khaki.util.DoubleGridOperator;
+import valoeghese.khaki.util.GridUtils;
 import valoeghese.khaki.util.IntGridOperator;
 import valoeghese.khaki.util.LossyDoubleCache;
 import valoeghese.khaki.util.LossyIntCache;
@@ -170,6 +171,10 @@ public class KhakiNoiseGenerator {
 					double endX = edgeData[0];
 					double endZ = edgeData[1];
 
+					// pythag(8,8) + 16 = 11.32(ceil-2dp) + 16 = 27.32.
+					if (GridUtils.distanceLineBetween(startX, startZ, endX, endZ, (x << 4) + 8, (z << 4) + 8) < 27.32) {
+						result++; // result is number of rivers to check for in this chunk.
+					}
 				}
 
 				riverData >>= 4;
