@@ -188,11 +188,6 @@ public class KhakiNoiseGenerator {
 	private final DoubleGridOperator offsets;
 	private final IntGridOperator chunkRivers;
 
-	private static final double redistribute(double f) {
-		double c = (f - 70.0) / 120.0;
-		return 70.0 + 210.0 * (c / (1.0 + Math.abs(c)));
-	}
-
 	public int getBaseHeight(int megaChunkX, int megaChunkZ) {
 		int result = this.continentNoise.get(megaChunkX, megaChunkZ);
 		// clamp base height from 20 to 150
@@ -211,6 +206,11 @@ public class KhakiNoiseGenerator {
 
 	public int getRiverData(int megaChunkX, int megaChunkZ) {
 		return this.rivers.get(megaChunkX, megaChunkZ);
+	}
+	
+	private static final double redistribute(double f) {
+		double c = (f - 70.0) / 120.0;
+		return 70.0 + 210.0 * (c / (1.0 + Math.abs(c)));
 	}
 
 	private void edgePos(double position[], GridDirection direction, int megaChunkX, int megaChunkZ) {

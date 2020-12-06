@@ -11,6 +11,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import valoeghese.khaki.KhakiNoiseGenerator;
+import valoeghese.khaki.util.GridUtils;
 
 // Simulator of "normal terrain" heightmap. Produces a javafx image thereof.
 public final class GenVisualiser extends Application {
@@ -40,7 +41,8 @@ public final class GenVisualiser extends Application {
 	private static void drawTo(KhakiNoiseGenerator noiseGen, PixelWriter writer, int width, int height) {
 		for (int x = 0; x < width; ++x) {
 			for (int z = 0; z < height; ++z) {
-				writer.setColor(x, z, getColour(255 * (noiseGen.getRiverData(x >> SCALE, z >> SCALE) > 0 ? 1 : 0), noiseGen.getBaseHeight(x >> SCALE, z >> SCALE), 80));
+//				writer.setColor(x, z, GridUtils.isNearLineBetween(928, 898, 345, -45, x, z, 4) ? Color.WHITE : Color.BLACK);
+//				writer.setColor(x, z, getColour(255 * (noiseGen.getRiverData(x >> SCALE, z >> SCALE) > 0 ? 1 : 0), noiseGen.getBaseHeight(x >> SCALE, z >> SCALE), 80));
 				//writer.setColor(x, z, Color.grayRgb(70 * (noiseGen.getPositionData(x >> SCALE, z >> SCALE) & 3)));
 //				writer.setColor(x, z, Color.grayRgb(255 * (noiseGen.getRiverData(x >> SCALE, z >> SCALE) > 0 ? 1 : 0)));
 			}
