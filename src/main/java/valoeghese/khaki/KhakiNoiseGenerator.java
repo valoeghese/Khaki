@@ -159,6 +159,7 @@ public class KhakiNoiseGenerator {
 			while (riverData > 0) {
 				GridDirection.deserialise(currentRiverData, riverData & 0b1111);
 
+				// todo: not this
 				double offset1a = this.offsets.get(megaChunkX + currentRiverData[0].xOff, megaChunkZ + currentRiverData[0].zOff);
 				double offset1b = this.offsets.get(megaChunkX + currentRiverData[0].xOff + 32, megaChunkZ + currentRiverData[0].zOff);
 				double startX = ((megaChunkX + currentRiverData[0].xOff) << 8) + 256 * offset1a;
