@@ -66,156 +66,15 @@ public class KhakiNoiseGenerator {
 						// if river start
 						if ((this.getPositionData(xPos, zPos) & 2) == 2) {
 							result <<= 4; // shift existing data: 2 positions (0b0000-0b1111)
-
-							int rX = xPos;
-							int rZ = zPos;
-							int currentHeight = this.getBaseHeight(rX, rZ);
-							GridDirection cache = null;
-							Random riverRand = new Random(rX * 5724773 + rZ);
-
-							// trace river path
-							for (int i = 0; i < 6; ++i) {
-								IntList optionsXPreferred = new IntArrayList();
-								IntList optionsZPreferred = new IntArrayList();
-								List<GridDirection> directionsPreferred = new ArrayList<>();
-
-								IntList optionsX = new IntArrayList();
-								IntList optionsZ = new IntArrayList();
-								List<GridDirection> directions = new ArrayList<>();
-
-								// go through directions
-
-								for (GridDirection direction : GridDirection.values()) {
-									int nextX = rX + direction.xOff;
-									int nextZ = rZ + direction.zOff;
-
-									int newHeight = this.getBaseHeight(nextX, nextZ);
-
-									if (newHeight > currentHeight + 10) {
-										optionsXPreferred.add(nextX);
-										optionsZPreferred.add(nextZ);
-										directionsPreferred.add(direction);
-									} else if (newHeight > currentHeight + 2) {
-										optionsX.add(nextX);
-										optionsZ.add(nextZ);
-										directions.add(direction);
-									}
-								}
-
-								// prefer the preferred
-								if (!optionsXPreferred.isEmpty()) {
-									optionsX = optionsXPreferred;
-									optionsZ = optionsZPreferred;
-									directions = directionsPreferred;
-								}
-
-								if (optionsX.isEmpty()) {
-									if (rX == x && rZ == z) {
-										if (cache == null) {
-											break;
-										}
-
-										result |= GridDirection.serialise(cache, null);
-									}
-
-									break; // no new positions
-								}
-
-								int index = riverRand.nextInt(optionsX.size());
-								GridDirection direction = directions.get(index);
-
-								if (rX == x && rZ == z) {
-									if (direction == null && cache == null) {
-										break;
-									}
-
-									result |= GridDirection.serialise(cache, direction);
-									break;
-								}
-
-								rX = optionsX.getInt(index);
-								rZ = optionsZ.getInt(index);
-								cache = direction;
-							}
+							result |= this.getRiverFrom(xPos, zPos, x, z);
 						}
 					}
 				}
 
 				return result;
+			} else if ((this.getPositionData(x, z) & 2) == 2) {
+				return this.getRiverFrom(x, z, x, z); // TODO simplify check since start is river?
 			} else {
-				if ((this.getPositionData(x, z) & 2) == 2) {
-					int rX = x;
-					int rZ = z;
-					int currentHeight = this.getBaseHeight(rX, rZ);
-					GridDirection cache = null;
-					Random riverRand = new Random(rX * 5724773 + rZ);
-
-					// trace river path
-					for (int i = 0; i < 6; ++i) {
-						IntList optionsXPreferred = new IntArrayList();
-						IntList optionsZPreferred = new IntArrayList();
-						List<GridDirection> directionsPreferred = new ArrayList<>();
-
-						IntList optionsX = new IntArrayList();
-						IntList optionsZ = new IntArrayList();
-						List<GridDirection> directions = new ArrayList<>();
-
-						// go through directions
-
-						for (GridDirection direction : GridDirection.values()) {
-							int nextX = rX + direction.xOff;
-							int nextZ = rZ + direction.zOff;
-
-							int newHeight = this.getBaseHeight(nextX, nextZ);
-
-							if (newHeight > currentHeight + 10) {
-								optionsXPreferred.add(nextX);
-								optionsZPreferred.add(nextZ);
-								directionsPreferred.add(direction);
-							} else if (newHeight > currentHeight + 2) {
-								optionsX.add(nextX);
-								optionsZ.add(nextZ);
-								directions.add(direction);
-							}
-						}
-
-						// prefer the preferred
-						if (!optionsXPreferred.isEmpty()) {
-							optionsX = optionsXPreferred;
-							optionsZ = optionsZPreferred;
-							directions = directionsPreferred;
-						}
-
-						if (optionsX.isEmpty()) {
-							if (rX == x && rZ == z) {
-								if (cache == null) {
-									break;
-								}
-
-								return GridDirection.serialise(cache, null);
-							}
-
-							break; // no new positions
-						}
-
-						int index = riverRand.nextInt(optionsX.size());
-						GridDirection direction = directions.get(index);
-
-						if (rX == x && rZ == z) {
-							if (direction == null && cache == null) {
-								break;
-							}
-
-							return GridDirection.serialise(cache, direction);
-						}
-
-						rX = optionsX.getInt(index);
-						rZ = optionsZ.getInt(index);
-						cache = direction;
-					}
-
-				}
-
 				return 0;
 			}
 		});
@@ -272,6 +131,80 @@ public class KhakiNoiseGenerator {
 	private final IntGridOperator rivers;
 	private final DoubleGridOperator offsets;
 	private final IntGridOperator chunkRivers;
+
+	private int getRiverFrom(int x, int z, int checkX, int checkZ) {
+		int rX = x;
+		int rZ = z;
+		int currentHeight = this.getBaseHeight(rX, rZ);
+		GridDirection cache = null;
+		Random riverRand = new Random(rX * 5724773 + rZ);
+
+		// trace river path
+		for (int i = 0; i < 6; ++i) {
+			IntList optionsXPreferred = new IntArrayList();
+			IntList optionsZPreferred = new IntArrayList();
+			List<GridDirection> directionsPreferred = new ArrayList<>();
+
+			IntList optionsX = new IntArrayList();
+			IntList optionsZ = new IntArrayList();
+			List<GridDirection> directions = new ArrayList<>();
+
+			// go through directions
+
+			for (GridDirection direction : GridDirection.values()) {
+				int nextX = rX + direction.xOff;
+				int nextZ = rZ + direction.zOff;
+
+				int newHeight = this.getBaseHeight(nextX, nextZ);
+
+				if (newHeight > currentHeight + 12) {
+					optionsXPreferred.add(nextX);
+					optionsZPreferred.add(nextZ);
+					directionsPreferred.add(direction);
+				} else if (newHeight > currentHeight + 2) {
+					optionsX.add(nextX);
+					optionsZ.add(nextZ);
+					directions.add(direction);
+				}
+			}
+
+			// prefer the preferred
+			if (!optionsXPreferred.isEmpty()) {
+				optionsX = optionsXPreferred;
+				optionsZ = optionsZPreferred;
+				directions = directionsPreferred;
+			}
+
+			if (optionsX.isEmpty()) {
+				if (rX == checkX && rZ == checkZ) {
+					if (cache == null) {
+						break;
+					}
+
+					return GridDirection.serialise(cache, null);
+				}
+
+				break; // no new positions
+			}
+
+			int index = riverRand.nextInt(optionsX.size());
+			GridDirection direction = directions.get(index);
+
+			if (rX == checkX && rZ == checkZ) {
+				if (direction == null && cache == null) {
+					break;
+				}
+
+				return GridDirection.serialise(cache, direction);
+			}
+
+			rX = optionsX.getInt(index);
+			rZ = optionsZ.getInt(index);
+			cache = direction;
+		}
+
+		return 0;
+	}
 
 	public int getBaseHeight(int megaChunkX, int megaChunkZ) {
 		int result = this.continentNoise.get(megaChunkX, megaChunkZ);
