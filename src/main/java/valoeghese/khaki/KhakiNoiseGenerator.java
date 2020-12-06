@@ -142,7 +142,80 @@ public class KhakiNoiseGenerator {
 				}
 
 				return result;
-			} else { // TODO river end traceback to start?
+			} else {
+				if ((this.getPositionData(x, z) & 2) == 2) {
+					int rX = x;
+					int rZ = z;
+					int currentHeight = this.getBaseHeight(rX, rZ);
+					GridDirection cache = null;
+					Random riverRand = new Random(rX * 5724773 + rZ);
+
+					// trace river path
+					for (int i = 0; i < 6; ++i) {
+						IntList optionsXPreferred = new IntArrayList();
+						IntList optionsZPreferred = new IntArrayList();
+						List<GridDirection> directionsPreferred = new ArrayList<>();
+
+						IntList optionsX = new IntArrayList();
+						IntList optionsZ = new IntArrayList();
+						List<GridDirection> directions = new ArrayList<>();
+
+						// go through directions
+
+						for (GridDirection direction : GridDirection.values()) {
+							int nextX = rX + direction.xOff;
+							int nextZ = rZ + direction.zOff;
+
+							int newHeight = this.getBaseHeight(nextX, nextZ);
+
+							if (newHeight > currentHeight + 10) {
+								optionsXPreferred.add(nextX);
+								optionsZPreferred.add(nextZ);
+								directionsPreferred.add(direction);
+							} else if (newHeight > currentHeight + 2) {
+								optionsX.add(nextX);
+								optionsZ.add(nextZ);
+								directions.add(direction);
+							}
+						}
+
+						// prefer the preferred
+						if (!optionsXPreferred.isEmpty()) {
+							optionsX = optionsXPreferred;
+							optionsZ = optionsZPreferred;
+							directions = directionsPreferred;
+						}
+
+						if (optionsX.isEmpty()) {
+							if (rX == x && rZ == z) {
+								if (cache == null) {
+									break;
+								}
+
+								return GridDirection.serialise(cache, null);
+							}
+
+							break; // no new positions
+						}
+
+						int index = riverRand.nextInt(optionsX.size());
+						GridDirection direction = directions.get(index);
+
+						if (rX == x && rZ == z) {
+							if (direction == null && cache == null) {
+								break;
+							}
+
+							return GridDirection.serialise(cache, direction);
+						}
+
+						rX = optionsX.getInt(index);
+						rZ = optionsZ.getInt(index);
+						cache = direction;
+					}
+
+				}
+
 				return 0;
 			}
 		});
@@ -218,6 +291,10 @@ public class KhakiNoiseGenerator {
 
 	public int getRiverData(int megaChunkX, int megaChunkZ) {
 		return this.rivers.get(megaChunkX, megaChunkZ);
+	}
+
+	public int checkForRivers(int chunkX, int chunkZ) {
+		return this.chunkRivers.get(chunkX, chunkZ);
 	}
 
 	private static final double redistribute(double f) {
