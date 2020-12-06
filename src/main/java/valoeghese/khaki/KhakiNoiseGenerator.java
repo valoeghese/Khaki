@@ -4,14 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import valoeghese.khaki.noise.NoiseUtils;
 import valoeghese.khaki.noise.OpenSimplexNoise;
+import valoeghese.khaki.util.DoubleGridOperator;
 import valoeghese.khaki.util.IntGridOperator;
+import valoeghese.khaki.util.LossyDoubleCache;
 import valoeghese.khaki.util.LossyIntCache;
 
 /**
@@ -146,18 +147,32 @@ public class KhakiNoiseGenerator {
 			}
 		});
 
+		this.offsets = new LossyDoubleCache(512, (x, z) -> (double) NoiseUtils.randomFloat(x, z, this.iseed));
+
 		this.chunkRivers = new LossyIntCache(1024, (x, z) -> {
 			int megaChunkX = (x >> 4);
 			int megaChunkZ = (z >> 4);
 			int riverData = this.getRiverData(megaChunkX, megaChunkZ);
+			int result = 0;
+			GridDirection[] currentRiverData = new GridDirection[2];
 
 			while (riverData > 0) {
-				int currentRiverData = riverData & 0b1111;
+				GridDirection.deserialise(currentRiverData, riverData & 0b1111);
 
+				double offset1a = this.offsets.get(megaChunkX + currentRiverData[0].xOff, megaChunkZ + currentRiverData[0].zOff);
+				double offset1b = this.offsets.get(megaChunkX + currentRiverData[0].xOff + 32, megaChunkZ + currentRiverData[0].zOff);
+				double startX = ((megaChunkX + currentRiverData[0].xOff) << 8) + 256 * offset1a;
+				double startZ = ((megaChunkZ + currentRiverData[0].zOff) << 8) + 256 * offset1b;
+
+				double offset2a = this.offsets.get(megaChunkX + currentRiverData[1].xOff, megaChunkZ + currentRiverData[1].zOff);
+				double offset2b = this.offsets.get(megaChunkX + currentRiverData[1].xOff + 32, megaChunkZ + currentRiverData[1].zOff);
+				double endX = ((megaChunkX + currentRiverData[1].xOff) << 8) + 256 * offset2a;
+				double endZ = ((megaChunkZ + currentRiverData[1].zOff) << 8) + 256 * offset2b;
 
 				riverData >>= 4;
 			}
-			return 0;
+
+			return result;
 		});
 	}
 
@@ -167,6 +182,7 @@ public class KhakiNoiseGenerator {
 	private final IntGridOperator continentNoise;
 	private final IntGridOperator positionData;
 	private final IntGridOperator rivers;
+	private final DoubleGridOperator offsets;
 	private final IntGridOperator chunkRivers;
 
 	private static final double redistribute(double f) {
@@ -227,6 +243,33 @@ enum GridDirection {
 		}
 	}
 
+	static void deserialise(GridDirection[] directions, int number) {
+		int iShape = number & 0b11;
+		number >>= 2;
+		number &= 0b11;
+
+		directions[0] = BY_ID[number];
+
+		GridShape shape = GridShape.BY_ID[iShape];
+		
+		switch (shape) {
+		case ANTICLOCKWISE:
+			directions[1] = BY_ID[(number - 1) & 0b11];
+			break;
+		case CLOCKWISE:
+			directions[1] = BY_ID[(number + 1) & 0b11];
+			break;
+		case LINE:
+			directions[1] = directions[0].reverse();
+			break;
+		case NODE:
+			directions[1] = directions[0];
+			break;
+		default:
+			throw new NullPointerException("Impossible error. Notify me (valoeghese) Immediately!. Debug Data: IShape = " + iShape + ", Direction = " + number + ", Array Size = " + directions.length);
+		}
+	}
+
 	static int serialise(GridDirection from, GridDirection to) {
 		// both cannot be null.
 		int result = 0;
@@ -246,17 +289,18 @@ enum GridDirection {
 		} else {
 			result |= from.id;
 			result <<= 2;
+			// TODO just make a bit expression. Probably "(to.id + 1) & 0b11 == from.id"
 			result |= (to.id > from.id || (from.id == 3 && to.id == 0)) ? GridShape.CLOCKWISE.id : GridShape.ANTICLOCKWISE.id;
 		}
 
 		return result;
 	}
 
-	static final Int2ObjectMap<GridDirection> BY_ID = new Int2ObjectArrayMap<>();
+	static final GridDirection[] BY_ID = new GridDirection[4];
 
 	static {
 		for (GridDirection d : GridDirection.values()) {
-			BY_ID.put(d.id, d);
+			BY_ID[d.id] = d;
 		}
 	}
 }
@@ -272,4 +316,12 @@ enum GridShape {
 	}
 
 	final int id;
+
+	static final GridShape[] BY_ID = new GridShape[4];
+
+	static {
+		for (GridShape d : GridShape.values()) {
+			BY_ID[d.id] = d;
+		}
+	}
 }

@@ -18,7 +18,6 @@ public final class GenVisualiser extends Application {
 		launch(args);
 	}
 
-
 	@Override
 	public void start(Stage stage) throws Exception {
 		Pane pane = new Pane();
