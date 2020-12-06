@@ -30,7 +30,7 @@ public class KhakiNoiseGenerator {
 		OpenSimplexNoise continent = new OpenSimplexNoise(rand);
 		OpenSimplexNoise continent2 = new OpenSimplexNoise(rand);
 
-		this.continentNoise = new LossyIntCache(512, (x, z) -> (int) (65 + 20 * (MathHelper.sin(x * 0.2f) + MathHelper.sin(z * 0.2f)) + 70 * continent.sample(x * 0.125, z * 0.125) + 20 * continent2.sample(x * 0.5, z * 0.5)));
+		this.continentNoise = new LossyIntCache(512, (x, z) -> (int) (65 + 20 * (MathHelper.cos(x * 0.2f) + MathHelper.sin(z * 0.2f)) + 70 * continent.sample(x * 0.125, z * 0.125) + 20 * continent2.sample(x * 0.5, z * 0.5)));
 		this.positionData = new LossyIntCache(512, (x, z) ->  {
 			int result = 0;
 
@@ -74,6 +74,10 @@ public class KhakiNoiseGenerator {
 
 							// trace river path
 							for (int i = 0; i < 6; ++i) {
+								IntList optionsXPreferred = new IntArrayList();
+								IntList optionsZPreferred = new IntArrayList();
+								List<GridDirection> directionsPreferred = new ArrayList<>();
+
 								IntList optionsX = new IntArrayList();
 								IntList optionsZ = new IntArrayList();
 								List<GridDirection> directions = new ArrayList<>();
@@ -86,11 +90,22 @@ public class KhakiNoiseGenerator {
 
 									int newHeight = this.getBaseHeight(nextX, nextZ);
 
-									if (newHeight > currentHeight + 2) {
+									if (newHeight > currentHeight + 10) {
+										optionsXPreferred.add(nextX);
+										optionsZPreferred.add(nextZ);
+										directionsPreferred.add(direction);
+									} else if (newHeight > currentHeight + 2) {
 										optionsX.add(nextX);
 										optionsZ.add(nextZ);
 										directions.add(direction);
 									}
+								}
+
+								// prefer the preferred
+								if (!optionsXPreferred.isEmpty()) {
+									optionsX = optionsXPreferred;
+									optionsZ = optionsZPreferred;
+									directions = directionsPreferred;
 								}
 
 								if (optionsX.isEmpty()) {
@@ -138,7 +153,8 @@ public class KhakiNoiseGenerator {
 
 			while (riverData > 0) {
 				int currentRiverData = riverData & 0b1111;
-				
+
+
 				riverData >>= 4;
 			}
 			return 0;
