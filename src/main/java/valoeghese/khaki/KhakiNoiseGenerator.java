@@ -160,21 +160,28 @@ public class KhakiNoiseGenerator {
 			while (riverData > 0) {
 				GridDirection.deserialise(currentRiverData, riverData & 0b1111);
 
-				if (currentRiverData[0] != currentRiverData[1]) {
-					// 1. get position along edge 1
-					edgePos(edgeData, currentRiverData[0], megaChunkX, megaChunkZ);
-					double startX = edgeData[0];
-					double startZ = edgeData[1];
+				// 1. get position along edge 1
+				edgePos(edgeData, currentRiverData[0], megaChunkX, megaChunkZ);
+				double startX = edgeData[0];
+				double startZ = edgeData[1];
 
-					// 2. get position along edge 2
+				// 2. get position along edge 2
+				double endX;
+				double endZ;
+
+				if (currentRiverData[0] == currentRiverData[1]) {
+					// centre of region
+					endX = (megaChunkX << 8) + 128;
+					endZ = (megaChunkZ << 8) + 128;
+				} else {
 					edgePos(edgeData, currentRiverData[1], megaChunkX, megaChunkZ);
-					double endX = edgeData[0];
-					double endZ = edgeData[1];
+					endX = edgeData[0];
+					endZ = edgeData[1];
+				}
 
-					// pythag(8,8) + 16 = 11.32(ceil-2dp) + 16 = 27.32.
-					if (GridUtils.distanceLineBetween(startX, startZ, endX, endZ, (x << 4) + 8, (z << 4) + 8) < 27.32) {
-						result++; // result is number of rivers to check for in this chunk.
-					}
+				// pythag(8,8) + 16 = 11.32(ceil-2dp) + 16 = 27.32.
+				if (GridUtils.distanceLineBetween(startX, startZ, endX, endZ, (x << 4) + 8, (z << 4) + 8) < 27.32) {
+					result++; // result is number of rivers to check for in this chunk.
 				}
 
 				riverData >>= 4;
@@ -212,7 +219,7 @@ public class KhakiNoiseGenerator {
 	public int getRiverData(int megaChunkX, int megaChunkZ) {
 		return this.rivers.get(megaChunkX, megaChunkZ);
 	}
-	
+
 	private static final double redistribute(double f) {
 		double c = (f - 70.0) / 120.0;
 		return 70.0 + 210.0 * (c / (1.0 + Math.abs(c)));
