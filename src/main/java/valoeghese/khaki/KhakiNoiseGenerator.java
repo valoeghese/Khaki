@@ -48,9 +48,9 @@ public class KhakiNoiseGenerator {
 						result |= 2; // river start
 					}
 				}
-
-				result |= NoiseUtils.random(x, z, 1 + this.iseed, 0b111111111100); // 0b 1111 1111 1100. 6 more bits of random data
 			}
+
+			result |= NoiseUtils.random(x, z, 1 + this.iseed, 0b111111111100);  // 0b 1111 1111 1100. 6 more bits of random data
 
 			return result;
 		});
@@ -67,8 +67,12 @@ public class KhakiNoiseGenerator {
 
 						// if river start
 						if ((this.getPositionData(xPos, zPos) & 2) == 2) {
-							result <<= 4; // shift existing data: 2 positions (0b0000-0b1111)
-							result |= this.getRiverFrom(xPos, zPos, x, z);
+							int riverData = this.getRiverFrom(xPos, zPos, x, z);
+
+							if (riverData > -1) {
+								result <<= 4; // shift existing data: 2 positions (0b0000-0b1111)
+								result |= riverData;
+							}
 						}
 					}
 				}
@@ -206,7 +210,7 @@ public class KhakiNoiseGenerator {
 			cache = direction.reverse();
 		}
 
-		return 0;
+		return -1;
 	}
 
 	public int getBaseHeight(int megaChunkX, int megaChunkZ) {

@@ -33,17 +33,22 @@ public final class GenVisualiser extends Application {
 			System.out.println((e.getScreenX() * SCALE) + ", " + (e.getScreenY() * SCALE));
 		});*/
 
-		drawTo(noiseGen, canvas.getGraphicsContext2D().getPixelWriter(), WIDTH, HEIGHT);
+		try {
+			drawTo(noiseGen, canvas.getGraphicsContext2D().getPixelWriter(), WIDTH, HEIGHT);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
 		stage.show();
 	}
 
 	private static void drawTo(KhakiNoiseGenerator noiseGen, PixelWriter writer, int width, int height) {
 		for (int x = 0; x < width; ++x) {
 			for (int z = 0; z < height; ++z) {
-//				writer.setColor(x, z, visualiseChunkRivers(x >> SCALE, z >> SCALE, noiseGen));
+				//				writer.setColor(x, z, visualiseChunkRivers(x >> SCALE, z >> SCALE, noiseGen));
 				writer.setColor(x, z, visualiseRiverDirections(x >> SCALE, z >> SCALE, noiseGen));
 				//				writer.setColor(x, z, GridUtils.isNearLineBetween(928, 898, 345, -45, x, z, 4) ? Color.WHITE : Color.BLACK);
-//				writer.setColor(x, z, getColour(255 * (noiseGen.getRiverData(x >> SCALE, z >> SCALE) > 0 ? 1 : 0), noiseGen.getBaseHeight(x >> SCALE, z >> SCALE), 80));
+				//				writer.setColor(x, z, getColour(255 * (noiseGen.getRiverData(x >> SCALE, z >> SCALE) > 0 ? 1 : 0), noiseGen.getBaseHeight(x >> SCALE, z >> SCALE), 80));
 				//writer.setColor(x, z, Color.grayRgb(70 * (noiseGen.getPositionData(x >> SCALE, z >> SCALE) & 3)));
 				//				writer.setColor(x, z, Color.grayRgb(255 * (noiseGen.getRiverData(x >> SCALE, z >> SCALE) > 0 ? 1 : 0)));
 			}
@@ -55,6 +60,12 @@ public final class GenVisualiser extends Application {
 
 		if (number > 0) {
 			int iShape = number & 0b11;
+
+			// TEST IF SHIFTING UNNECCESARILY
+			/*while ((number >>= 4) > 0) {
+				iShape = number & 0b11;
+			}*/
+
 			GridShape shape = GridShape.BY_ID[iShape];
 			switch (shape) {
 			case ANTICLOCKWISE:
@@ -69,7 +80,7 @@ public final class GenVisualiser extends Application {
 				return Color.BLACK;
 			}
 		}
-		return Color.BLACK;
+		return Color.gray((double) noiseGen.getBaseHeight(megaChunkX, megaChunkZ) / 256.0);
 	}
 
 	private static Color visualiseChunkRivers(int x, int z, KhakiNoiseGenerator noiseGen) {
