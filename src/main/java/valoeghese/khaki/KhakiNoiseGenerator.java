@@ -202,7 +202,7 @@ public class KhakiNoiseGenerator {
 			rX = optionsX.getInt(index);
 			rZ = optionsZ.getInt(index);
 			currentHeight = this.getBaseHeight(rX, rZ);
-			cache = direction;
+			cache = direction.reverse();
 		}
 
 		return 0;
