@@ -44,6 +44,7 @@ public class KhakiNoiseGenerator {
 					result |= 1; // coast
 
 					//if (NoiseUtils.random(x, z, this.iseed, 0b111) == 0) {
+					//					if ((x & 1) == 0 && (z & 1) == 0) {
 					if ((x & 0b11) == 0 && (z & 0b11) == 0) { // place on a grid. TODO use spaced random
 						result |= 2; // river start
 					}
