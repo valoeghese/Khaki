@@ -261,7 +261,7 @@ public class KhakiNoiseGenerator {
 
 			position[1] = (megaChunkZ << 8) + offset;
 		} else {
-			// horizontal edges (in vertical edges from centre) always has a +32 offset to x
+			// horizontal edge offsets (in vertical edges from centre) always has a +32 offset to x in order to be different
 			double offset;
 
 			if (direction == GridDirection.UP) {
@@ -279,7 +279,6 @@ public class KhakiNoiseGenerator {
 	public static final int SEA_LEVEL = 80;
 	public static final int RIVER_SEARCH_RAD = 8;
 
-	// TODO make these package private again
 	public static enum GridShape {
 		NODE(0),
 		LINE(1),
