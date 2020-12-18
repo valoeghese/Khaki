@@ -6,6 +6,7 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.image.PixelWriter;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
@@ -29,9 +30,9 @@ public final class GenVisualiser extends Application {
 
 		KhakiNoiseGenerator noiseGen = new KhakiNoiseGenerator(new Random().nextLong());
 
-		/*stage.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
-			System.out.println((e.getScreenX() * SCALE) + ", " + (e.getScreenY() * SCALE));
-		});*/
+		stage.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
+			System.out.println(getRiverDirection(noiseGen, ((int) e.getSceneX() >> SCALE), ((int) e.getSceneY() >> SCALE)));
+		});
 
 		try {
 			drawTo(noiseGen, canvas.getGraphicsContext2D().getPixelWriter(), WIDTH, HEIGHT);
@@ -53,6 +54,27 @@ public final class GenVisualiser extends Application {
 				//				writer.setColor(x, z, Color.grayRgb(255 * (noiseGen.getRiverData(x >> SCALE, z >> SCALE) > 0 ? 1 : 0)));
 			}
 		}
+	}
+
+	private static Color visualiseChunkRivers(int x, int z, KhakiNoiseGenerator noiseGen) {
+		int red = noiseGen.checkForRivers(x, z) > 0 ? 255 : 0;
+		int megaX = (x >> 4);
+		int megaZ = (z >> 4);
+		int green = noiseGen.getBaseHeight(megaX, megaZ);
+		int blue = noiseGen.getRiverData(megaX, megaZ) > 0 ? 255 : 0;
+		return Color.rgb(red, green, blue);
+	}
+
+	private String getRiverDirection(KhakiNoiseGenerator gen, int chunkX, int chunkZ) {
+		int number = gen.getRiverData(chunkX >> 4, chunkZ >> 4);
+
+		if (number > 0) {
+			int iShape = number & 0b11;
+
+			GridShape shape = GridShape.BY_ID[iShape];
+			return shape.toString();
+		}
+		return "None";
 	}
 
 	static Color visualiseRiverDirections(int megaChunkX, int megaChunkZ, KhakiNoiseGenerator noiseGen) {
@@ -81,15 +103,6 @@ public final class GenVisualiser extends Application {
 			}
 		}
 		return Color.gray((double) noiseGen.getBaseHeight(megaChunkX, megaChunkZ) / 256.0);
-	}
-
-	private static Color visualiseChunkRivers(int x, int z, KhakiNoiseGenerator noiseGen) {
-		int red = noiseGen.checkForRivers(x, z) > 0 ? 255 : 0;
-		int megaX = (x >> 4);
-		int megaZ = (z >> 4);
-		int green = noiseGen.getBaseHeight(megaX, megaZ);
-		int blue = noiseGen.getRiverData(megaX, megaZ) > 0 ? 255 : 0;
-		return Color.rgb(red, green, blue);
 	}
 
 	static Color getColour(int red, double height, double seaLevel) {
@@ -124,6 +137,6 @@ public final class GenVisualiser extends Application {
 		return newmin + value * (newmax - newmin);
 	}
 
-	private static final int SCALE = 1;
+	private static final int SCALE = 0;
 	private static final int WIDTH = 1000, HEIGHT = 800;
 }
