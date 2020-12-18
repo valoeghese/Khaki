@@ -86,7 +86,7 @@ public class KhakiNoiseGenerator {
 			}
 		});
 
-		this.offsets = new LossyDoubleCache(512, (x, z) -> (double) NoiseUtils.randomFloat(x, z, this.iseed));
+		this.offsets = new LossyDoubleCache(512, (x, z) -> (double) 256 * NoiseUtils.randomFloat(x, z, this.iseed));
 
 		this.chunkRivers = new LossyIntCache(1024, (x, z) -> {
 			int megaChunkX = (x >> 4);
@@ -137,6 +137,9 @@ public class KhakiNoiseGenerator {
 	private final IntGridOperator positionData;
 	private final IntGridOperator rivers;
 	private final DoubleGridOperator offsets;
+	/**
+	 * Gives the number of rivers a chunk has to check for in generation.
+	 */
 	private final IntGridOperator chunkRivers;
 
 	private int getRiverFrom(int x, int z, int checkX, int checkZ) {
@@ -256,7 +259,7 @@ public class KhakiNoiseGenerator {
 				offset = this.offsets.get(megaChunkX, megaChunkZ); // this square's left
 			}
 
-			position[1] = megaChunkZ + offset;
+			position[1] = (megaChunkZ << 8) + offset;
 		} else {
 			// horizontal edges (in vertical edges from centre) always has a +32 offset to x
 			double offset;
@@ -269,7 +272,7 @@ public class KhakiNoiseGenerator {
 				offset = this.offsets.get(megaChunkX + 32, megaChunkZ); // this square's down
 			}
 
-			position[0] = megaChunkX + offset;
+			position[0] = (megaChunkX << 8) + offset;
 		}
 	}
 
