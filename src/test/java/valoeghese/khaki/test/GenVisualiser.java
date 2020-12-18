@@ -28,7 +28,9 @@ public final class GenVisualiser extends Application {
 		stage.setWidth(WIDTH);
 		stage.setHeight(HEIGHT);
 
-		KhakiNoiseGenerator noiseGen = new KhakiNoiseGenerator(new Random().nextLong());
+		long seed = new Random().nextLong();
+		System.out.println(seed);
+		KhakiNoiseGenerator noiseGen = new KhakiNoiseGenerator(seed);
 
 		stage.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
 			System.out.println(getRiverDirection(noiseGen, ((int) e.getSceneX() >> SCALE), ((int) e.getSceneY() >> SCALE)));
