@@ -201,6 +201,7 @@ public class KhakiNoiseGenerator {
 
 			rX = optionsX.getInt(index);
 			rZ = optionsZ.getInt(index);
+			currentHeight = this.getBaseHeight(rX, rZ);
 			cache = direction;
 		}
 
@@ -347,8 +348,7 @@ public class KhakiNoiseGenerator {
 			} else {
 				result |= from.id;
 				result <<= 2;
-				// TODO just make a bit expression. Probably "(to.id + 1) & 0b11 == from.id"
-				result |= (to.id > from.id || (from.id == 3 && to.id == 0)) ? GridShape.CLOCKWISE.id : GridShape.ANTICLOCKWISE.id;
+				result |= ((from.id + 1) & 0b11) == to.id ? GridShape.CLOCKWISE.id : GridShape.ANTICLOCKWISE.id;
 			}
 
 			return result;
