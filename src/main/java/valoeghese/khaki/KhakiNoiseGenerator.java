@@ -91,51 +91,39 @@ public class KhakiNoiseGenerator {
 		this.chunkRivers = new LossyIntCache(1024, (x, z) -> {
 			int megaChunkX = (x >> 4);
 			int megaChunkZ = (z >> 4);
-			int riverDatas[] = new int[] {
-					this.getRiverData(megaChunkX, megaChunkZ),
-					this.getRiverData(megaChunkX + 1,	megaChunkZ - 1),
-					this.getRiverData(megaChunkX + 1,	megaChunkZ),
-					this.getRiverData(megaChunkX + 1,	megaChunkZ + 1),
-					this.getRiverData(megaChunkX,		megaChunkZ + 1),
-					this.getRiverData(megaChunkX - 1,	megaChunkZ + 1),
-					this.getRiverData(megaChunkX - 1,	megaChunkZ),
-					this.getRiverData(megaChunkX - 1,	megaChunkZ - 1),
-					this.getRiverData(megaChunkX,		megaChunkZ - 1)
-			};
+			int riverData = this.getRiverData(megaChunkX, megaChunkZ);
 			int result = 0;
 			double[] edgeData = new double[2];
 			GridDirection[] currentRiverData = new GridDirection[2];
 
-			for (int riverData : riverDatas) {
-				while (riverData > 0) {
-					GridDirection.deserialise(currentRiverData, riverData & 0b1111);
+			while (riverData > 0) {
+				GridDirection.deserialise(currentRiverData, riverData & 0b1111);
 
-					// 1. get position along edge 1
-					edgePos(edgeData, currentRiverData[0], megaChunkX, megaChunkZ);
-					double startX = edgeData[0];
-					double startZ = edgeData[1];
+				// 1. get position along edge 1
+				edgePos(edgeData, currentRiverData[0], megaChunkX, megaChunkZ);
+				double startX = edgeData[0];
+				double startZ = edgeData[1];
 
-					// 2. get position along edge 2
-					double endX;
-					double endZ;
+				// 2. get position along edge 2
+				double endX;
+				double endZ;
 
-					if (currentRiverData[0] == currentRiverData[1]) {
-						// centre of region
-						endX = (megaChunkX << 8) + 128;
-						endZ = (megaChunkZ << 8) + 128;
-					} else {
-						edgePos(edgeData, currentRiverData[1], megaChunkX, megaChunkZ);
-						endX = edgeData[0];
-						endZ = edgeData[1];
-					}
-
-					// pythag(8,8) + 16 = 11.32(ceil-2dp) + 16 = 27.32.
-					if (GridUtils.distanceLineBetween(startX, startZ, endX, endZ, (x << 4) + 8, (z << 4) + 8) < 27.32) {
-						result++; // result is number of rivers to check for in this chunk.
-					}
-
-					riverData >>= 4;
+				if (currentRiverData[0] == currentRiverData[1]) {
+					// centre of region
+					endX = (megaChunkX << 8) + 128;
+					endZ = (megaChunkZ << 8) + 128;
+				} else {
+					edgePos(edgeData, currentRiverData[1], megaChunkX, megaChunkZ);
+					endX = edgeData[0];
+					endZ = edgeData[1];
 				}
+
+				// pythag(8,8) + 16 = 11.32(ceil-2dp) + 16 = 27.32.
+				if (GridUtils.distanceLineBetween(startX, startZ, endX, endZ, (x << 4) + 8, (z << 4) + 8) < 27.32) {
+					result++; // result is number of rivers to check for in this chunk.
+				}
+
+				riverData >>= 4;
 			}
 
 			return result;
