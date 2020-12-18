@@ -259,7 +259,7 @@ public class KhakiNoiseGenerator {
 				offset = this.offsets.get(megaChunkX, megaChunkZ); // this square's left
 			}
 
-			position[1] = (megaChunkZ << 8) + offset;
+			position[1] = (megaChunkZ << 8) + 128;
 		} else {
 			// horizontal edge offsets (in vertical edges from centre) always has a +32 offset to x in order to be different
 			double offset;
@@ -272,7 +272,7 @@ public class KhakiNoiseGenerator {
 				offset = this.offsets.get(megaChunkX + 32, megaChunkZ); // this square's down
 			}
 
-			position[0] = (megaChunkX << 8) + offset;
+			position[0] = (megaChunkX << 8) + 128;
 		}
 	}
 
