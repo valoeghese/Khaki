@@ -14,9 +14,9 @@ public class GridUtils {
 
 		double dx = endX - startX;
 		double dz = endZ - startZ;
-		
+
 		// try fix bugs by swappings all x and z and doing it backwards
-		if (dz > dx) {
+		if (Math.abs(dz) > Math.abs(dx)) {
 			// cache old vals
 			double oldDX = dx;
 			double oldSX = startX;
