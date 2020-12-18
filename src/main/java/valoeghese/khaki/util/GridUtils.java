@@ -2,7 +2,7 @@ package valoeghese.khaki.util;
 
 public class GridUtils {
 	public static double distanceLineBetween(double startX, double startZ, double endX, double endZ, int x, int z) {
-		if (startX > endX || startZ > endZ) {
+		/*if (startX > endX || startZ > endZ) {
 			double tempX = startX;
 			startX = endX;
 			endX = tempX;
@@ -10,7 +10,7 @@ public class GridUtils {
 			double tempZ = startZ;
 			startZ = endZ;
 			endZ = tempZ;
-		}
+		}*/
 
 		double dx = endX - startX;
 		double dz = endZ - startZ;
