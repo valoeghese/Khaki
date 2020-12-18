@@ -6,12 +6,11 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.image.PixelWriter;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import valoeghese.khaki.KhakiNoiseGenerator;
-import valoeghese.khaki.util.GridUtils;
+import valoeghese.khaki.KhakiNoiseGenerator.GridShape;
 
 // Simulator of "normal terrain" heightmap. Produces a javafx image thereof.
 public final class GenVisualiser extends Application {
@@ -30,9 +29,9 @@ public final class GenVisualiser extends Application {
 
 		KhakiNoiseGenerator noiseGen = new KhakiNoiseGenerator(new Random().nextLong());
 
-		stage.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
+		/*stage.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
 			System.out.println((e.getScreenX() * SCALE) + ", " + (e.getScreenY() * SCALE));
-		});
+		});*/
 
 		drawTo(noiseGen, canvas.getGraphicsContext2D().getPixelWriter(), WIDTH, HEIGHT);
 		stage.show();
@@ -42,12 +41,35 @@ public final class GenVisualiser extends Application {
 		for (int x = 0; x < width; ++x) {
 			for (int z = 0; z < height; ++z) {
 				writer.setColor(x, z, visualiseChunkRivers(x >> SCALE, z >> SCALE, noiseGen));
-//				writer.setColor(x, z, GridUtils.isNearLineBetween(928, 898, 345, -45, x, z, 4) ? Color.WHITE : Color.BLACK);
+//				writer.setColor(x, z, visualiseRiverDirections(x >> SCALE, z >> SCALE, noiseGen));
+				//				writer.setColor(x, z, GridUtils.isNearLineBetween(928, 898, 345, -45, x, z, 4) ? Color.WHITE : Color.BLACK);
 //				writer.setColor(x, z, getColour(255 * (noiseGen.getRiverData(x >> SCALE, z >> SCALE) > 0 ? 1 : 0), noiseGen.getBaseHeight(x >> SCALE, z >> SCALE), 80));
 				//writer.setColor(x, z, Color.grayRgb(70 * (noiseGen.getPositionData(x >> SCALE, z >> SCALE) & 3)));
-//				writer.setColor(x, z, Color.grayRgb(255 * (noiseGen.getRiverData(x >> SCALE, z >> SCALE) > 0 ? 1 : 0)));
+				//				writer.setColor(x, z, Color.grayRgb(255 * (noiseGen.getRiverData(x >> SCALE, z >> SCALE) > 0 ? 1 : 0)));
 			}
 		}
+	}
+
+	private static Color visualiseRiverDirections(int megaChunkX, int megaChunkZ, KhakiNoiseGenerator noiseGen) {
+		int number = noiseGen.getRiverData(megaChunkX, megaChunkZ);
+
+		if (number > 0) {
+			int iShape = number & 0b11;
+			GridShape shape = GridShape.BY_ID[iShape];
+			switch (shape) {
+			case ANTICLOCKWISE:
+				return Color.RED;
+			case LINE:
+				return Color.YELLOW;
+			case CLOCKWISE:
+				return Color.GREEN;
+			case NODE:
+				return Color.WHITE;
+			default:
+				return Color.BLACK;
+			}
+		}
+		return Color.BLACK;
 	}
 
 	private static Color visualiseChunkRivers(int x, int z, KhakiNoiseGenerator noiseGen) {
@@ -91,6 +113,6 @@ public final class GenVisualiser extends Application {
 		return newmin + value * (newmax - newmin);
 	}
 
-	private static final int SCALE = 1;
+	private static final int SCALE = 4;
 	private static final int WIDTH = 1000, HEIGHT = 800;
 }

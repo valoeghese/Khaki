@@ -42,7 +42,8 @@ public class KhakiNoiseGenerator {
 						|| this.getBaseHeight(x, z - 1) > SEA_LEVEL)  {
 					result |= 1; // coast
 
-					if (NoiseUtils.random(x, z, this.iseed, 0b111) == 0) {
+					//if (NoiseUtils.random(x, z, this.iseed, 0b111) == 0) {
+					if ((x & 0b11) == 0 && (z & 0b11) == 0) { // place on a grid. TODO use spaced random
 						result |= 2; // river start
 					}
 				}
@@ -267,43 +268,42 @@ public class KhakiNoiseGenerator {
 
 	public static final int SEA_LEVEL = 80;
 	public static final int RIVER_SEARCH_RAD = 8;
-}
 
-enum GridDirection {
-	UP(0, 0, 1, false),
-	RIGHT(1, 1, 0, true),
-	DOWN(2, 0, -1, false),
-	LEFT(3, -1, 0, true);
+	public static enum GridDirection {
+		UP(0, 0, 1, false),
+		RIGHT(1, 1, 0, true),
+		DOWN(2, 0, -1, false),
+		LEFT(3, -1, 0, true);
 
-	private GridDirection(int id, int xOff, int zOff, boolean horizontal) {
-		this.id = id;
-		this.xOff = xOff;
-		this.zOff = zOff;
-		this.horizontal = horizontal;
-	}
-
-	final int id;
-	final int xOff, zOff;
-	final boolean horizontal;
-
-	GridDirection reverse() {
-		switch (this) {
-		case UP:
-			return DOWN;
-		case DOWN:
-			return UP;
-		case LEFT:
-			return RIGHT;
-		case RIGHT:
-			return LEFT;
-		default:
-			return null;
+		private GridDirection(int id, int xOff, int zOff, boolean horizontal) {
+			this.id = id;
+			this.xOff = xOff;
+			this.zOff = zOff;
+			this.horizontal = horizontal;
 		}
-	}
 
-	static void deserialise(GridDirection[] directions, int number) {
-		int iShape = number & 0b11;
-		number >>= 2;
+		final int id;
+		final int xOff, zOff;
+		final boolean horizontal;
+
+		GridDirection reverse() {
+			switch (this) {
+			case UP:
+				return DOWN;
+			case DOWN:
+				return UP;
+			case LEFT:
+				return RIGHT;
+			case RIGHT:
+				return LEFT;
+			default:
+				return null;
+			}
+		}
+
+		static void deserialise(GridDirection[] directions, int number) {
+			int iShape = number & 0b11;
+			number >>= 2;
 				number &= 0b11;
 
 				directions[0] = BY_ID[number];
@@ -326,60 +326,62 @@ enum GridDirection {
 				default:
 					throw new NullPointerException("Impossible error. Notify me (valoeghese) Immediately!. Debug Data: IShape = " + iShape + ", Direction = " + number + ", Array Size = " + directions.length);
 				}
-	}
-
-	static int serialise(GridDirection from, GridDirection to) {
-		// both cannot be null.
-		int result = 0;
-
-		if (from == null) {
-			result |= to.id;
-			result <<= 2;
-			result |= GridShape.NODE.id;
-		} else if (to == null) {
-			result |= from.id;
-			result <<= 2;
-			result |= GridShape.NODE.id;
-		} else if (from == to.reverse()) {
-			result |= from.id;
-			result <<= 2;
-			result |= GridShape.LINE.id;
-		} else {
-			result |= from.id;
-			result <<= 2;
-			// TODO just make a bit expression. Probably "(to.id + 1) & 0b11 == from.id"
-			result |= (to.id > from.id || (from.id == 3 && to.id == 0)) ? GridShape.CLOCKWISE.id : GridShape.ANTICLOCKWISE.id;
 		}
 
-		return result;
-	}
+		static int serialise(GridDirection from, GridDirection to) {
+			// both cannot be null.
+			int result = 0;
 
-	static final GridDirection[] BY_ID = new GridDirection[4];
+			if (from == null) {
+				result |= to.id;
+				result <<= 2;
+				result |= GridShape.NODE.id;
+			} else if (to == null) {
+				result |= from.id;
+				result <<= 2;
+				result |= GridShape.NODE.id;
+			} else if (from == to.reverse()) {
+				result |= from.id;
+				result <<= 2;
+				result |= GridShape.LINE.id;
+			} else {
+				result |= from.id;
+				result <<= 2;
+				// TODO just make a bit expression. Probably "(to.id + 1) & 0b11 == from.id"
+				result |= (to.id > from.id || (from.id == 3 && to.id == 0)) ? GridShape.CLOCKWISE.id : GridShape.ANTICLOCKWISE.id;
+			}
 
-	static {
-		for (GridDirection d : GridDirection.values()) {
-			BY_ID[d.id] = d;
+			return result;
+		}
+
+		static final GridDirection[] BY_ID = new GridDirection[4];
+
+		static {
+			for (GridDirection d : GridDirection.values()) {
+				BY_ID[d.id] = d;
+			}
 		}
 	}
-}
 
-enum GridShape {
-	NODE(0),
-	LINE(1),
-	CLOCKWISE(2),
-	ANTICLOCKWISE(3);
+	// TODO make these package private again
+	public static enum GridShape {
+		NODE(0),
+		LINE(1),
+		CLOCKWISE(2),
+		ANTICLOCKWISE(3);
 
-	private GridShape(int id) {
-		this.id = id;
-	}
-
-	final int id;
-
-	static final GridShape[] BY_ID = new GridShape[4];
-
-	static {
-		for (GridShape d : GridShape.values()) {
-			BY_ID[d.id] = d;
+		private GridShape(int id) {
+			this.id = id;
 		}
-	}
+
+		final int id;
+
+		public static final GridShape[] BY_ID = new GridShape[4];
+
+		static {
+			for (GridShape d : GridShape.values()) {
+				BY_ID[d.id] = d;
+			}
+		}
+	}	
 }
