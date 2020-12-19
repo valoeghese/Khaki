@@ -50,7 +50,7 @@ public final class KhakiChunkGenerator extends ChunkGenerator {
 
 	@Override
 	public ChunkGenerator withSeed(long seed) {
-		return new KhakiChunkGenerator(this.biomeSource, seed);
+		return new KhakiChunkGenerator(this.biomeSource.withSeed(seed), seed);
 	}
 
 	// Identical to vanilla

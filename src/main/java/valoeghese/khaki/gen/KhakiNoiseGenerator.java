@@ -150,7 +150,7 @@ public class KhakiNoiseGenerator {
 		OpenSimplexNoise hills = new OpenSimplexNoise(rand);
 
 		this.heightModifier = new LossyDoubleCache(256, (x, z) -> {
-			return 10 * (1 + hills.sample(x * 0.07, z * 0.07));
+			return 10 * (1 + hills.sample(x * 0.02, z * 0.02));
 		});
 
 		this.heightmap = new LossyIntCache(256, (x, z) -> {
@@ -342,7 +342,7 @@ public class KhakiNoiseGenerator {
 	}
 
 	public int getWaterHeight(int x, int z) {
-		return Math.min(SEA_LEVEL, this.getBaseHeight(x, z));
+		return Math.max(SEA_LEVEL, this.getBaseHeight(x, z));
 	}	
 
 	private static final double redistribute(double f) {

@@ -29,7 +29,7 @@ public class KhakiBiomeSource extends BiomeSource {
 
 	@Override
 	public Biome getBiomeForNoiseGen(int biomeX, int biomeY, int biomeZ) {
-		return biomeRegistry.get(biomeNoise.sample(biomeX * 0.1, biomeZ * 0.1) > 0.28 ? BiomeKeys.FOREST : BiomeKeys.PLAINS);
+		return biomeRegistry.get(biomeNoise.sample(biomeX * 0.06, biomeZ * 0.06) > 0.28 ? BiomeKeys.FOREST : BiomeKeys.PLAINS);
 	}
 
 	@Override
