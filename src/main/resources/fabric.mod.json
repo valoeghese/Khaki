@@ -23,7 +23,7 @@
     ]
   },
   
-  "accessWidener" : "khaki.aw",
+  "accessWidener": "khaki.aw",
   
   "requires": {
     "fabricloader": ">=0.4.0"
