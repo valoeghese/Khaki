@@ -6,6 +6,7 @@ import java.util.stream.IntStream;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
@@ -22,9 +23,9 @@ import net.minecraft.world.gen.ChunkRandom;
 import net.minecraft.world.gen.StructureAccessor;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.gen.chunk.StructuresConfig;
+import net.minecraft.world.gen.chunk.VerticalBlockSample;
 
 public final class KhakiChunkGenerator extends ChunkGenerator {
-
 	public KhakiChunkGenerator(BiomeSource biomeSource, long seed) {
 		super(biomeSource, new StructuresConfig(true));
 		this.seed = seed;
@@ -101,22 +102,75 @@ public final class KhakiChunkGenerator extends ChunkGenerator {
 		}
 	}
 
+	// Custom
+
 	@Override
 	public void populateNoise(WorldAccess world, StructureAccessor accessor, Chunk chunk) {
-		// TODO Auto-generated method stub
+		BlockPos.Mutable pos = new BlockPos.Mutable();
+		final int startX = chunk.getPos().getStartX();
+		final int startZ = chunk.getPos().getStartZ();
 
+		for (int xoff = 0; xoff < 16; ++xoff) {
+			final int x = startX + xoff;
+			pos.setX(xoff);
+
+			for (int zoff = 0; zoff < 16; ++zoff) {
+				final int z = startZ + zoff;
+				pos.setZ(zoff);
+
+				int height = this.noiseGenerator.getHeight(x, z);
+				int waterHeight = this.noiseGenerator.getWaterHeight(x, z);
+
+				for (int y = 0; y < WORLD_HEIGHT; ++y) {
+					pos.setY(y);
+
+					if (y < height) {
+						chunk.setBlockState(pos, SOLID, false);
+					} else if (y < waterHeight) {
+						chunk.setBlockState(pos, FLUID, false);
+					} else {
+						chunk.setBlockState(pos, AIR, false);
+					}
+				}
+			}
+		}
 	}
 
 	@Override
 	public int getHeight(int x, int z, Type heightmapType) {
-		// TODO Auto-generated method stub
-		return 0;
+		int groundHeight = this.noiseGenerator.getHeight(x, z) - 1;
+
+		// if the heightmap considers air solid.
+		if (heightmapType.getBlockPredicate().test(Blocks.WATER.getDefaultState())) {
+			int waterHeight = this.noiseGenerator.getWaterHeight(x, z) - 1;
+			return Math.max(groundHeight, waterHeight);
+		}
+
+		return groundHeight;
+	}
+
+	@Override
+	public int getSeaLevel() {
+		return KhakiNoiseGenerator.SEA_LEVEL;
 	}
 
 	@Override
 	public BlockView getColumnSample(int x, int z) {
-		// TODO Auto-generated method stub
-		return null;
+		BlockState[] tiles = new BlockState[256];
+		int height = this.noiseGenerator.getHeight(x, z);
+		int waterHeight = this.noiseGenerator.getBaseHeight(x, z);
+
+		for (int y = 0; y < WORLD_HEIGHT; ++y) {
+			if (y < height) {
+				tiles[y] = SOLID;
+			} else if (y < waterHeight) {
+				tiles[y] = FLUID;
+			} else {
+				tiles[y] = AIR;
+			}
+		}
+
+		return new VerticalBlockSample(tiles);
 	}
 
 	public static final Codec<KhakiChunkGenerator> CODEC = RecordCodecBuilder.create((instance) -> {
@@ -126,4 +180,9 @@ public final class KhakiChunkGenerator extends ChunkGenerator {
 			return khakiChunkGenerator.getWorldSeed();
 		})).apply(instance, instance.stable(KhakiChunkGenerator::new));
 	});
+
+	private static final int WORLD_HEIGHT = 256;
+	private static final BlockState SOLID = Blocks.STONE.getDefaultState();
+	private static final BlockState FLUID = Blocks.WATER.getDefaultState();
+	private static final BlockState AIR = Blocks.AIR.getDefaultState();
 }

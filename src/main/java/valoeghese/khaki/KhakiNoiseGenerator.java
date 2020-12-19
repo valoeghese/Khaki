@@ -36,11 +36,11 @@ public class KhakiNoiseGenerator {
 		this.positionData = new LossyIntCache(512, (x, z) ->  {
 			int result = 0;
 
-			if (this.getBaseHeight(x, z) <= SEA_LEVEL) {
-				if (this.getBaseHeight(x + 1, z) > SEA_LEVEL
-						|| this.getBaseHeight(x - 1, z) > SEA_LEVEL
-						|| this.getBaseHeight(x, z + 1) > SEA_LEVEL
-						|| this.getBaseHeight(x, z - 1) > SEA_LEVEL)  {
+			if (this.getBaseHeight(x, z) < SEA_LEVEL) {
+				if (this.getBaseHeight(x + 1, z) >= SEA_LEVEL
+						|| this.getBaseHeight(x - 1, z) >= SEA_LEVEL
+						|| this.getBaseHeight(x, z + 1) >= SEA_LEVEL
+						|| this.getBaseHeight(x, z - 1) >= SEA_LEVEL)  {
 					result |= 1; // coast
 
 					//if (NoiseUtils.random(x, z, this.iseed, 0b111) == 0) {
@@ -57,7 +57,7 @@ public class KhakiNoiseGenerator {
 		});
 
 		this.rivers = new LossyIntCache(256, (x, z) -> {
-			if (this.getBaseHeight(x, z) > SEA_LEVEL) {
+			if (this.getBaseHeight(x, z) >= SEA_LEVEL) {
 				int result = 0;
 
 				for (int xo = -RIVER_SEARCH_RAD; xo <= RIVER_SEARCH_RAD; ++xo) {
@@ -159,6 +159,7 @@ public class KhakiNoiseGenerator {
 			final int megaChunkX = (x >> 8);
 			final int megaChunkZ = (z >> 8);
 
+			// TODO: make river height have more interesting modifications like waterfalls
 			int baseHeight = this.getBaseBlockHeight(x, z);
 			double modifier = this.heightModifier.get(x, z);
 
@@ -316,6 +317,10 @@ public class KhakiNoiseGenerator {
 		return this.baseHeight.get(x, z);
 	}
 
+	public int getHeight(int x, int z) {
+		return this.heightmap.get(x, z);
+	}
+
 	public int getPositionData(int megaChunkX, int megaChunkZ) {
 		return this.positionData.get(megaChunkX, megaChunkZ);
 	}
@@ -330,6 +335,10 @@ public class KhakiNoiseGenerator {
 	public int chunkSeesRiver(int chunkX, int chunkZ) {
 		return this.chunkRivers.get(chunkX, chunkZ);
 	}
+
+	public int getWaterHeight(int x, int z) {
+		return Math.min(SEA_LEVEL, this.getBaseHeight(x, z));
+	}	
 
 	private static final double redistribute(double f) {
 		double c = (f - 70.0) / 120.0;
@@ -366,7 +375,7 @@ public class KhakiNoiseGenerator {
 		}
 	}
 
-	public static final int SEA_LEVEL = 80;
+	public static final int SEA_LEVEL = 81; // was 80 but checks were <= and > rather than < and >=.
 	public static final int RIVER_SEARCH_RAD = 8;
 
 	public static enum GridShape {
@@ -388,5 +397,5 @@ public class KhakiNoiseGenerator {
 				BY_ID[d.id] = d;
 			}
 		}
-	}	
+	}
 }
