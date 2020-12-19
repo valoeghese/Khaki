@@ -32,7 +32,7 @@ public class KhakiNoiseGenerator {
 		this.continent = new OpenSimplexNoise(rand);
 		this.continent2 = new OpenSimplexNoise(rand);
 
-		this.continentNoise = new LossyIntCache(512, (x, z) -> this.sampleHeight(x >> 8, z >> 8));
+		this.continentNoise = new LossyIntCache(512, (x, z) -> this.sampleHeight(x << 8, z << 8));
 
 		this.positionData = new LossyIntCache(512, (x, z) ->  {
 			int result = 0;
@@ -130,7 +130,9 @@ public class KhakiNoiseGenerator {
 			return result;
 		});
 
-		this.baseHeight = new LossyIntCache(1024, (x, z) -> this.sampleHeight(x, z));
+		this.baseHeight = new LossyIntCache(1024, (x, z) -> {
+			return this.sampleHeight(x, z);
+		});
 
 		OpenSimplexNoise hills = new OpenSimplexNoise(rand);
 

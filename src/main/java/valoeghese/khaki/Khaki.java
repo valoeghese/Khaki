@@ -42,10 +42,10 @@ public class Khaki implements ModInitializer {
 							int schunkX = entity.chunkX;
 							int schunkZ = entity.chunkZ;
 
-							for (int cxo = -32; cxo < 32; ++cxo) {
+							for (int cxo = -256; cxo < 256; ++cxo) {
 								int chunkX = schunkX + cxo;
 
-								for (int czo = -32; czo < 32; ++czo) {
+								for (int czo = -256; czo < 256; ++czo) {
 									int chunkZ = schunkZ + czo;
 
 									if (terrain.chunkSeesRiver(chunkX, chunkZ) > 0) {
@@ -59,6 +59,7 @@ public class Khaki implements ModInitializer {
 						e.printStackTrace(System.out);
 					}
 
+					cmd.getSource().sendFeedback(new LiteralText("No River Chunk Found."), false);
 					return 0;
 				});
 				dispatcher.register(lab);
