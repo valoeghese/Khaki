@@ -202,8 +202,13 @@ public class KhakiNoiseGenerator {
 				}
 			}
 
+			// River shape yeah baby
 			if (riverDist < 16.00) {
-				modifier = MathHelper.lerp(riverDist / 16.00, -4, modifier);
+				if (riverDist < 1.00) {
+					modifier = -4;
+				} else {
+					modifier = MathHelper.lerp((riverDist - 1.00) / 15.00, -4, modifier);
+				}
 			}
 
 			return baseHeight + (int) modifier;
