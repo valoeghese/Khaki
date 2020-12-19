@@ -42,10 +42,10 @@ public class Khaki implements ModInitializer {
 							int schunkX = entity.chunkX;
 							int schunkZ = entity.chunkZ;
 
-							for (int cxo = -16; cxo < 16; ++cxo) {
+							for (int cxo = -32; cxo < 32; ++cxo) {
 								int chunkX = schunkX + cxo;
 
-								for (int czo = -16; czo < 16; ++czo) {
+								for (int czo = -32; czo < 32; ++czo) {
 									int chunkZ = schunkZ + czo;
 
 									if (terrain.chunkSeesRiver(chunkX, chunkZ) > 0) {
