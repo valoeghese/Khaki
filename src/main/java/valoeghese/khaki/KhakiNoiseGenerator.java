@@ -128,6 +128,24 @@ public class KhakiNoiseGenerator {
 
 			return result;
 		});
+
+		this.baseHeight = new LossyIntCache(1024, (x, z) -> {
+			int megaChunkX = (x >> 8);
+			int megaChunkZ = (z >> 8);
+			int lowX = (megaChunkX << 8);
+			int lowZ = (megaChunkZ << 8);
+
+			double xProg = (x - lowX) / 256.0;
+			double zProg = (z - lowZ) / 256.0;
+
+			return (int) MathHelper.lerp2(
+					xProg,
+					zProg,
+					this.getBaseHeight(megaChunkX,		megaChunkZ),
+					this.getBaseHeight(megaChunkX + 1,	megaChunkZ),
+					this.getBaseHeight(megaChunkX,		megaChunkZ + 1),
+					this.getBaseHeight(megaChunkX + 1,	megaChunkZ + 1));
+		});
 	}
 
 	private final long seed;
@@ -136,6 +154,7 @@ public class KhakiNoiseGenerator {
 	private final IntGridOperator continentNoise;
 	private final IntGridOperator positionData;
 	private final IntGridOperator rivers;
+	private final IntGridOperator baseHeight;
 	private final DoubleGridOperator offsets;
 	/**
 	 * Gives the number of rivers a chunk has to check for in generation.
@@ -227,6 +246,10 @@ public class KhakiNoiseGenerator {
 			return 150;
 		}
 		return result;
+	}
+
+	public int getBaseBlockHeight(int x, int z) {
+		return this.baseHeight.get(x, z);
 	}
 
 	public int getPositionData(int megaChunkX, int megaChunkZ) {
