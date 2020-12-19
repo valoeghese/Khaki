@@ -125,6 +125,11 @@ public final class KhakiChunkGenerator extends ChunkGenerator {
 				int height = this.noiseGenerator.getHeight(x, z);
 				int waterHeight = this.noiseGenerator.getWaterHeight(x, z);
 
+				if (waterHeight > height) {
+					height--;
+					waterHeight--;
+				}
+
 				for (int y = 0; y < WORLD_HEIGHT; ++y) {
 					pos.setY(y);
 
@@ -143,10 +148,15 @@ public final class KhakiChunkGenerator extends ChunkGenerator {
 	@Override
 	public int getHeight(int x, int z, Type heightmapType) {
 		int groundHeight = this.noiseGenerator.getHeight(x, z) - 1;
+		int waterHeight = this.noiseGenerator.getWaterHeight(x, z) - 1;
+
+		if (waterHeight > groundHeight) {
+			groundHeight--;
+			waterHeight--;
+		}
 
 		// if the heightmap considers air solid.
 		if (heightmapType.getBlockPredicate().test(Blocks.WATER.getDefaultState())) {
-			int waterHeight = this.noiseGenerator.getWaterHeight(x, z) - 1;
 			return Math.max(groundHeight, waterHeight);
 		}
 
@@ -163,6 +173,11 @@ public final class KhakiChunkGenerator extends ChunkGenerator {
 		BlockState[] tiles = new BlockState[256];
 		int height = this.noiseGenerator.getHeight(x, z);
 		int waterHeight = this.noiseGenerator.getWaterHeight(x, z);
+
+		if (waterHeight > height) {
+			height--;
+			waterHeight--;
+		}
 
 		for (int y = 0; y < WORLD_HEIGHT; ++y) {
 			if (y < height) {
