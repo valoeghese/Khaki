@@ -1,6 +1,6 @@
 package valoeghese.khaki.util;
 
-import valoeghese.khaki.KhakiNoiseGenerator.GridShape;
+import valoeghese.khaki.gen.KhakiNoiseGenerator.GridShape;
 
 public enum GridDirection {
 	UP(0, 0, 1, false),

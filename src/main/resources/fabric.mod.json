@@ -17,6 +17,9 @@
   "entrypoints": {
     "main": [
       "valoeghese.khaki.Khaki"
+    ],
+    "client": [
+      "valoeghese.khaki.KhakiClient"
     ]
   },
   

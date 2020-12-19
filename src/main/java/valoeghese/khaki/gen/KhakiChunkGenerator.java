@@ -1,4 +1,4 @@
-package valoeghese.khaki;
+package valoeghese.khaki.gen;
 
 import java.util.Random;
 import java.util.stream.IntStream;

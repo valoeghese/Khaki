@@ -10,8 +10,8 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import valoeghese.khaki.KhakiNoiseGenerator;
-import valoeghese.khaki.KhakiNoiseGenerator.GridShape;
+import valoeghese.khaki.gen.KhakiNoiseGenerator;
+import valoeghese.khaki.gen.KhakiNoiseGenerator.GridShape;
 
 // Simulator of "normal terrain" heightmap. Produces a javafx image thereof.
 public final class GenVisualiser extends Application {

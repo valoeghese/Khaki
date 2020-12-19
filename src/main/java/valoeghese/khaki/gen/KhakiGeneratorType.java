@@ -1,4 +1,4 @@
-package valoeghese.khaki;
+package valoeghese.khaki.gen;
 
 import net.minecraft.client.world.GeneratorType;
 import net.minecraft.util.registry.Registry;

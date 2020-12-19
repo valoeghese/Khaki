@@ -1,4 +1,4 @@
-package valoeghese.khaki;
+package valoeghese.khaki.gen;
 
 import java.util.ArrayList;
 import java.util.List;
