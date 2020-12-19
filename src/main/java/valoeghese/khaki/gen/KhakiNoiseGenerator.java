@@ -141,9 +141,7 @@ public class KhakiNoiseGenerator {
 			for (GridDirection.KingMove direction : GridDirection.KingMove.values()) {
 				heightSample = this.getBaseMegaHeight(megaX + direction.xOff, megaZ + direction.zOff);
 
-				if (heightSample < min) {
-					min = heightSample;
-				} else if (heightSample > max) {
+				if (heightSample > max) {
 					max = heightSample;
 				}
 			}
@@ -170,7 +168,18 @@ public class KhakiNoiseGenerator {
 			double riverDist = 16.00;
 			int riverData = this.getRiverData(megaChunkX, megaChunkZ);
 
-			if (riverData > 0 && this.chunkSeesRiver(chunkX, chunkZ) > 0) {
+			boolean chunkSeesRiver = this.chunkSeesRiver(chunkX, chunkZ) > 0;
+
+			// Check surrounding chunks
+			if (!chunkSeesRiver) {
+				for (GridDirection.KingMove direction : GridDirection.KingMove.values()) {
+					if (chunkSeesRiver = this.chunkSeesRiver(chunkX + direction.xOff, chunkZ + direction.zOff) > 0) {
+						break;
+					}
+				}
+			}
+
+			if (riverData > 0 && chunkSeesRiver) {
 				double[] edgeData = new double[2];
 				GridDirection[] currentRiverData = new GridDirection[2];
 
