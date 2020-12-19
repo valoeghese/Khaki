@@ -9,6 +9,7 @@ import net.minecraft.world.gen.chunk.ChunkGeneratorSettings;
 public class KhakiGeneratorType extends GeneratorType {
 	public KhakiGeneratorType() {
 		super("khaki");
+		GeneratorType.VALUES.add(this);
 	}
 
 	@Override
