@@ -131,22 +131,21 @@ public class KhakiNoiseGenerator {
 		});
 
 		this.baseHeight = new LossyIntCache(1024, (x, z) -> {
-			final int megaX = (x >> 8);
-			final int megaZ = (z >> 8);
-			int heightSample = this.getBaseMegaHeight(megaX, megaZ);
+			int megaChunkX = (x >> 8);
+			int megaChunkZ = (z >> 8);
+			int lowX = (megaChunkX << 8);
+			int lowZ = (megaChunkZ << 8);
 
-			int min = heightSample;
-			int max = heightSample;
+			double xProg = MathHelper.perlinFade((x - lowX) / 256.0);
+			double zProg = MathHelper.perlinFade((z - lowZ) / 256.0);
 
-			for (GridDirection.KingMove direction : GridDirection.KingMove.values()) {
-				heightSample = this.getBaseMegaHeight(megaX + direction.xOff, megaZ + direction.zOff);
-
-				if (heightSample > max) {
-					max = heightSample;
-				}
-			}
-
-			return MathHelper.clamp(this.sampleHeight(x, z), min, max);
+			return (int) MathHelper.lerp2(
+					xProg,
+					zProg,
+					this.getBaseMegaHeight(megaChunkX,		megaChunkZ),
+					this.getBaseMegaHeight(megaChunkX + 1,	megaChunkZ),
+					this.getBaseMegaHeight(megaChunkX,		megaChunkZ + 1),
+					this.getBaseMegaHeight(megaChunkX + 1,	megaChunkZ + 1));
 		});
 
 		OpenSimplexNoise hills = new OpenSimplexNoise(rand);
@@ -179,7 +178,7 @@ public class KhakiNoiseGenerator {
 				}
 			}
 
-			if (riverData > 0 && chunkSeesRiver) {
+			if (chunkSeesRiver) {
 				double[] edgeData = new double[2];
 				GridDirection[] currentRiverData = new GridDirection[2];
 
@@ -233,7 +232,8 @@ public class KhakiNoiseGenerator {
 
 	private final long seed;
 	private final int iseed;
-	private static final double SAMPLE_HEIGHT_CONSTANT = (1.0 / 256.0);
+	private static final double SCALE_CONSTANT = 1.4;
+	private static final double SAMPLE_HEIGHT_CONSTANT = (1.0 / 256.0) * SCALE_CONSTANT;
 
 	private final IntGridOperator continentNoise;
 	private final IntGridOperator positionData;

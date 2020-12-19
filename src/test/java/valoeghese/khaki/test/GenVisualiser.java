@@ -32,6 +32,7 @@ public final class GenVisualiser extends Application {
 		System.out.println(seed);
 		KhakiNoiseGenerator noiseGen = new KhakiNoiseGenerator(seed);
 
+		// For visualiseChunkRivers.
 		stage.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
 			System.out.println(getRiverDirection(noiseGen, ((int) e.getSceneX() >> SCALE), ((int) e.getSceneY() >> SCALE)));
 		});
@@ -48,7 +49,8 @@ public final class GenVisualiser extends Application {
 	private static void drawTo(KhakiNoiseGenerator noiseGen, PixelWriter writer, int width, int height) {
 		for (int x = 0; x < width; ++x) {
 			for (int z = 0; z < height; ++z) {
-				writer.setColor(x, z, visualiseChunkRivers(x >> SCALE, z >> SCALE, noiseGen));
+				writer.setColor(x, z, Color.grayRgb(noiseGen.getHeight(x << SCALE, z << SCALE)));
+//				writer.setColor(x, z, visualiseChunkRivers(x >> SCALE, z >> SCALE, noiseGen));
 				//				writer.setColor(x, z, visualiseRiverDirections(x >> SCALE, z >> SCALE, noiseGen));
 				//				writer.setColor(x, z, GridUtils.isNearLineBetween(928, 898, 345, -45, x, z, 4) ? Color.WHITE : Color.BLACK);
 				//				writer.setColor(x, z, getColour(255 * (noiseGen.getRiverData(x >> SCALE, z >> SCALE) > 0 ? 1 : 0), noiseGen.getBaseHeight(x >> SCALE, z >> SCALE), 80));
@@ -139,6 +141,6 @@ public final class GenVisualiser extends Application {
 		return newmin + value * (newmax - newmin);
 	}
 
-	private static final int SCALE = 0;
+	private static final int SCALE = 1;
 	private static final int WIDTH = 1000, HEIGHT = 800;
 }
