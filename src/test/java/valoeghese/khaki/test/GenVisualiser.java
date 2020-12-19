@@ -59,7 +59,7 @@ public final class GenVisualiser extends Application {
 	}
 
 	private static Color visualiseChunkRivers(int x, int z, KhakiNoiseGenerator noiseGen) {
-		int red = noiseGen.checkForRivers(x, z) > 0 ? 255 : 0;
+		int red = noiseGen.chunkSeesRiver(x, z) > 0 ? 255 : 0;
 		int megaX = (x >> 4);
 		int megaZ = (z >> 4);
 		int green = noiseGen.getBaseHeight(megaX, megaZ);

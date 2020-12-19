@@ -118,7 +118,7 @@ public class KhakiNoiseGenerator {
 					endZ = edgeData[1];
 				}
 
-				// pythag(8,8) + 16 = 11.32(ceil-2dp) + 16 = 27.32.
+				// pythag(8,8) + 16 = 11.32(ceil-2dp) + 16 = 27.32. TODO generate this based on a constant.
 				if (GridUtils.distanceLineBetween(startX, startZ, endX, endZ, (x << 4) + 8, (z << 4) + 8) < 27.32) {
 					result++; // result is number of rivers to check for in this chunk.
 				}
@@ -146,6 +146,67 @@ public class KhakiNoiseGenerator {
 					this.getBaseHeight(megaChunkX,		megaChunkZ + 1),
 					this.getBaseHeight(megaChunkX + 1,	megaChunkZ + 1));
 		});
+
+		OpenSimplexNoise hills = new OpenSimplexNoise(rand);
+
+		this.heightModifier = new LossyDoubleCache(256, (x, z) -> {
+			return 10 * (1 + hills.sample(x * 0.07, z * 0.07));
+		});
+
+		this.heightmap = new LossyIntCache(256, (x, z) -> {
+			final int chunkX = (x >> 4);
+			final int chunkZ = (z >> 4);
+			final int megaChunkX = (x >> 8);
+			final int megaChunkZ = (z >> 8);
+
+			int baseHeight = this.getBaseBlockHeight(x, z);
+			double modifier = this.heightModifier.get(x, z);
+
+			double riverDist = 16.00;
+			int riverData = this.getRiverData(megaChunkX, megaChunkZ);
+
+			if (riverData > 0 && this.chunkSeesRiver(chunkX, chunkZ) > 0) {
+				double[] edgeData = new double[2];
+				GridDirection[] currentRiverData = new GridDirection[2];
+
+				while (riverData > 0) {
+					GridDirection.deserialise(currentRiverData, riverData & 0b1111);
+
+					// 1. get position along edge 1
+					edgePos(edgeData, currentRiverData[0], megaChunkX, megaChunkZ);
+					double startX = edgeData[0];
+					double startZ = edgeData[1];
+
+					// 2. get position along edge 2
+					double endX;
+					double endZ;
+
+					if (currentRiverData[0] == currentRiverData[1]) {
+						// centre of region
+						endX = (megaChunkX << 8) + 128;
+						endZ = (megaChunkZ << 8) + 128;
+					} else {
+						edgePos(edgeData, currentRiverData[1], megaChunkX, megaChunkZ);
+						endX = edgeData[0];
+						endZ = edgeData[1];
+					}
+
+					double dist = GridUtils.distanceLineBetween(startX, startZ, endX, endZ, x, z);
+
+					if (dist < riverDist) {
+						riverDist = dist;
+					}
+
+					riverData >>= 4;
+				}
+			}
+
+			if (riverDist < 16.00) {
+				modifier = MathHelper.lerp(riverDist / 16.00, -4, modifier);
+			}
+
+			return baseHeight + (int) modifier;
+		});
 	}
 
 	private final long seed;
@@ -154,12 +215,15 @@ public class KhakiNoiseGenerator {
 	private final IntGridOperator continentNoise;
 	private final IntGridOperator positionData;
 	private final IntGridOperator rivers;
-	private final IntGridOperator baseHeight;
 	private final DoubleGridOperator offsets;
+
 	/**
 	 * Gives the number of rivers a chunk has to check for in generation.
 	 */
 	private final IntGridOperator chunkRivers;
+	private final IntGridOperator baseHeight;
+	private final DoubleGridOperator heightModifier;
+	private final IntGridOperator heightmap;
 
 	private int getRiverFrom(int x, int z, int checkX, int checkZ) {
 		int rX = x;
@@ -260,7 +324,10 @@ public class KhakiNoiseGenerator {
 		return this.rivers.get(megaChunkX, megaChunkZ);
 	}
 
-	public int checkForRivers(int chunkX, int chunkZ) {
+	/**
+	 * Used by the generator to optimise generation and by the visualiser to visualise river placement.
+	 */
+	public int chunkSeesRiver(int chunkX, int chunkZ) {
 		return this.chunkRivers.get(chunkX, chunkZ);
 	}
 
