@@ -29,18 +29,19 @@ public class KhakiNoiseGenerator {
 
 		Random rand = new Random();
 
-		OpenSimplexNoise continent = new OpenSimplexNoise(rand);
-		OpenSimplexNoise continent2 = new OpenSimplexNoise(rand);
+		this.continent = new OpenSimplexNoise(rand);
+		this.continent2 = new OpenSimplexNoise(rand);
 
-		this.continentNoise = new LossyIntCache(512, (x, z) -> (int) (65 + 20 * (MathHelper.cos(x * 0.2f) + MathHelper.sin(z * 0.2f)) + 70 * continent.sample(x * 0.125, z * 0.125) + 20 * continent2.sample(x * 0.5, z * 0.5)));
+		this.continentNoise = new LossyIntCache(512, (x, z) -> this.sampleHeight(x >> 8, z >> 8));
+
 		this.positionData = new LossyIntCache(512, (x, z) ->  {
 			int result = 0;
 
-			if (this.getBaseHeight(x, z) < SEA_LEVEL) {
-				if (this.getBaseHeight(x + 1, z) >= SEA_LEVEL
-						|| this.getBaseHeight(x - 1, z) >= SEA_LEVEL
-						|| this.getBaseHeight(x, z + 1) >= SEA_LEVEL
-						|| this.getBaseHeight(x, z - 1) >= SEA_LEVEL)  {
+			if (this.getBaseMegaHeight(x, z) < SEA_LEVEL) {
+				if (this.getBaseMegaHeight(x + 1, z) >= SEA_LEVEL
+						|| this.getBaseMegaHeight(x - 1, z) >= SEA_LEVEL
+						|| this.getBaseMegaHeight(x, z + 1) >= SEA_LEVEL
+						|| this.getBaseMegaHeight(x, z - 1) >= SEA_LEVEL)  {
 					result |= 1; // coast
 
 					//if (NoiseUtils.random(x, z, this.iseed, 0b111) == 0) {
@@ -57,7 +58,7 @@ public class KhakiNoiseGenerator {
 		});
 
 		this.rivers = new LossyIntCache(256, (x, z) -> {
-			if (this.getBaseHeight(x, z) >= SEA_LEVEL) {
+			if (this.getBaseMegaHeight(x, z) >= SEA_LEVEL) {
 				int result = 0;
 
 				for (int xo = -RIVER_SEARCH_RAD; xo <= RIVER_SEARCH_RAD; ++xo) {
@@ -129,23 +130,7 @@ public class KhakiNoiseGenerator {
 			return result;
 		});
 
-		this.baseHeight = new LossyIntCache(1024, (x, z) -> {
-			int megaChunkX = (x >> 8);
-			int megaChunkZ = (z >> 8);
-			int lowX = (megaChunkX << 8);
-			int lowZ = (megaChunkZ << 8);
-
-			double xProg = MathHelper.perlinFade((x - lowX) / 256.0);
-			double zProg = MathHelper.perlinFade((z - lowZ) / 256.0);
-
-			return (int) MathHelper.lerp2(
-					xProg,
-					zProg,
-					this.getBaseHeight(megaChunkX,		megaChunkZ),
-					this.getBaseHeight(megaChunkX + 1,	megaChunkZ),
-					this.getBaseHeight(megaChunkX,		megaChunkZ + 1),
-					this.getBaseHeight(megaChunkX + 1,	megaChunkZ + 1));
-		});
+		this.baseHeight = new LossyIntCache(1024, (x, z) -> this.sampleHeight(x, z));
 
 		OpenSimplexNoise hills = new OpenSimplexNoise(rand);
 
@@ -215,8 +200,12 @@ public class KhakiNoiseGenerator {
 		});
 	}
 
+	private final OpenSimplexNoise continent;
+	private final OpenSimplexNoise continent2;
+
 	private final long seed;
 	private final int iseed;
+	private static final double SAMPLE_HEIGHT_CONSTANT = (1.0 / 256.0);
 
 	private final IntGridOperator continentNoise;
 	private final IntGridOperator positionData;
@@ -231,10 +220,18 @@ public class KhakiNoiseGenerator {
 	private final DoubleGridOperator heightModifier;
 	private final IntGridOperator heightmap;
 
+	private int sampleHeight(int x, int z) {
+		return (int) (65 
+				+ 20 * (MathHelper.cos((float) (x * SAMPLE_HEIGHT_CONSTANT * 0.2))
+						+ MathHelper.sin((float) (z * SAMPLE_HEIGHT_CONSTANT * 0.2)))
+				+ 70 * this.continent.sample(x * SAMPLE_HEIGHT_CONSTANT * 0.125, z * SAMPLE_HEIGHT_CONSTANT * 0.125)
+				+ 20 * this.continent2.sample(x * SAMPLE_HEIGHT_CONSTANT * 0.5, z * SAMPLE_HEIGHT_CONSTANT * 0.5));
+	}
+
 	private int getRiverFrom(int x, int z, int checkX, int checkZ) {
 		int rX = x;
 		int rZ = z;
-		int currentHeight = this.getBaseHeight(rX, rZ);
+		int currentHeight = this.getBaseMegaHeight(rX, rZ);
 		GridDirection cache = null;
 		Random riverRand = new Random(rX * 5724773 + rZ);
 
@@ -254,7 +251,7 @@ public class KhakiNoiseGenerator {
 				int nextX = rX + direction.xOff;
 				int nextZ = rZ + direction.zOff;
 
-				int newHeight = this.getBaseHeight(nextX, nextZ);
+				int newHeight = this.getBaseMegaHeight(nextX, nextZ);
 
 				if (newHeight > currentHeight + 12) {
 					optionsXPreferred.add(nextX);
@@ -299,14 +296,14 @@ public class KhakiNoiseGenerator {
 
 			rX = optionsX.getInt(index);
 			rZ = optionsZ.getInt(index);
-			currentHeight = this.getBaseHeight(rX, rZ);
+			currentHeight = this.getBaseMegaHeight(rX, rZ);
 			cache = direction.reverse();
 		}
 
 		return -1;
 	}
 
-	public int getBaseHeight(int megaChunkX, int megaChunkZ) {
+	public int getBaseMegaHeight(int megaChunkX, int megaChunkZ) {
 		int result = this.continentNoise.get(megaChunkX, megaChunkZ);
 		// clamp base height from 20 to 150
 		if (result < 20) {

@@ -62,7 +62,7 @@ public final class GenVisualiser extends Application {
 		int red = noiseGen.chunkSeesRiver(x, z) > 0 ? 255 : 0;
 		int megaX = (x >> 4);
 		int megaZ = (z >> 4);
-		int green = noiseGen.getBaseHeight(megaX, megaZ);
+		int green = noiseGen.getBaseMegaHeight(megaX, megaZ);
 		int blue = noiseGen.getRiverData(megaX, megaZ) > 0 ? 255 : 0;
 		return Color.rgb(red, green, blue);
 	}
@@ -104,7 +104,7 @@ public final class GenVisualiser extends Application {
 				return Color.BLACK;
 			}
 		}
-		return Color.gray((double) noiseGen.getBaseHeight(megaChunkX, megaChunkZ) / 256.0);
+		return Color.gray((double) noiseGen.getBaseMegaHeight(megaChunkX, megaChunkZ) / 256.0);
 	}
 
 	static Color getColour(int red, double height, double seaLevel) {

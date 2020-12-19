@@ -39,6 +39,10 @@ public final class KhakiChunkGenerator extends ChunkGenerator {
 	private final NoiseSampler surfaceDepthNoise;
 	private final KhakiNoiseGenerator noiseGenerator;
 
+	public KhakiNoiseGenerator getNoiseGenerator() {
+		return this.noiseGenerator;
+	}
+
 	public long getWorldSeed() {
 		return this.seed;
 	}
@@ -158,7 +162,7 @@ public final class KhakiChunkGenerator extends ChunkGenerator {
 	public BlockView getColumnSample(int x, int z) {
 		BlockState[] tiles = new BlockState[256];
 		int height = this.noiseGenerator.getHeight(x, z);
-		int waterHeight = this.noiseGenerator.getBaseHeight(x, z);
+		int waterHeight = this.noiseGenerator.getWaterHeight(x, z);
 
 		for (int y = 0; y < WORLD_HEIGHT; ++y) {
 			if (y < height) {
