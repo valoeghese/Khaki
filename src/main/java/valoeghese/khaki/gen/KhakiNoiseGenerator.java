@@ -131,7 +131,24 @@ public class KhakiNoiseGenerator {
 		});
 
 		this.baseHeight = new LossyIntCache(1024, (x, z) -> {
-			return this.sampleHeight(x, z);
+			final int megaX = (x >> 8);
+			final int megaZ = (z >> 8);
+			int heightSample = this.getBaseMegaHeight(megaX, megaZ);
+
+			int min = heightSample;
+			int max = heightSample;
+
+			for (GridDirection direction : GridDirection.values()) {
+				heightSample = this.getBaseBlockHeight(megaX + direction.xOff, megaZ + direction.zOff);
+
+				if (heightSample < min) {
+					min = heightSample;
+				} else if (heightSample > max) {
+					max = heightSample;
+				}
+			}
+
+			return MathHelper.clamp(this.sampleHeight(x, z), min, max);
 		});
 
 		OpenSimplexNoise hills = new OpenSimplexNoise(rand);
