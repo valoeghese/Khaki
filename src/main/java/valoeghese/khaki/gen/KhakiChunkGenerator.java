@@ -125,7 +125,7 @@ public final class KhakiChunkGenerator extends ChunkGenerator {
 				int height = this.noiseGenerator.getHeight(x, z);
 				int waterHeight = this.noiseGenerator.getWaterHeight(x, z);
 
-				if (waterHeight > height) {
+				if (waterHeight > height && waterHeight >= this.getSeaLevel()) {
 					height--;
 					waterHeight--;
 				}
@@ -150,7 +150,7 @@ public final class KhakiChunkGenerator extends ChunkGenerator {
 		int groundHeight = this.noiseGenerator.getHeight(x, z) - 1;
 		int waterHeight = this.noiseGenerator.getWaterHeight(x, z) - 1;
 
-		if (waterHeight > groundHeight) {
+		if (waterHeight > groundHeight && waterHeight >= this.getSeaLevel()) {
 			groundHeight--;
 			waterHeight--;
 		}
@@ -174,7 +174,7 @@ public final class KhakiChunkGenerator extends ChunkGenerator {
 		int height = this.noiseGenerator.getHeight(x, z);
 		int waterHeight = this.noiseGenerator.getWaterHeight(x, z);
 
-		if (waterHeight > height) {
+		if (waterHeight > height && waterHeight >= this.getSeaLevel()) {
 			height--;
 			waterHeight--;
 		}
