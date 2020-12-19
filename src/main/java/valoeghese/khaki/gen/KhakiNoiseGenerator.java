@@ -135,8 +135,8 @@ public class KhakiNoiseGenerator {
 			int lowX = (megaChunkX << 8);
 			int lowZ = (megaChunkZ << 8);
 
-			double xProg = (x - lowX) / 256.0;
-			double zProg = (z - lowZ) / 256.0;
+			double xProg = MathHelper.perlinFade((x - lowX) / 256.0);
+			double zProg = MathHelper.perlinFade((z - lowZ) / 256.0);
 
 			return (int) MathHelper.lerp2(
 					xProg,
@@ -342,7 +342,7 @@ public class KhakiNoiseGenerator {
 	}
 
 	public int getWaterHeight(int x, int z) {
-		return Math.max(SEA_LEVEL, this.getBaseHeight(x, z));
+		return Math.max(SEA_LEVEL, this.getBaseBlockHeight(x, z));
 	}	
 
 	private static final double redistribute(double f) {
