@@ -32,7 +32,7 @@ public class KhakiNoiseGenerator {
 		this.continent = new OpenSimplexNoise(rand);
 		this.continent2 = new OpenSimplexNoise(rand);
 
-		this.continentNoise = new LossyIntCache(512, (x, z) -> this.sampleHeight(x << 8, z << 8));
+		this.continentNoise = new LossyIntCache(512, (x, z) -> this.sampleHeight(x * 256, z * 256));
 
 		this.positionData = new LossyIntCache(512, (x, z) ->  {
 			int result = 0;
@@ -138,8 +138,8 @@ public class KhakiNoiseGenerator {
 			int min = heightSample;
 			int max = heightSample;
 
-			for (GridDirection direction : GridDirection.values()) {
-				heightSample = this.getBaseBlockHeight(megaX + direction.xOff, megaZ + direction.zOff);
+			for (GridDirection.KingMove direction : GridDirection.KingMove.values()) {
+				heightSample = this.getBaseMegaHeight(megaX + direction.xOff, megaZ + direction.zOff);
 
 				if (heightSample < min) {
 					min = heightSample;
@@ -290,7 +290,7 @@ public class KhakiNoiseGenerator {
 				directions = directionsPreferred;
 			}
 
-			if (optionsX.isEmpty()) {
+			if (optionsX.isEmpty() || i == RIVER_SEARCH_RAD - 1) {
 				if (rX == checkX && rZ == checkZ) {
 					if (cache == null) {
 						break;

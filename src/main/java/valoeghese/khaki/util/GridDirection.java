@@ -93,4 +93,23 @@ public enum GridDirection {
 			BY_ID[d.id] = d;
 		}
 	}
+
+	public enum KingMove {
+		U(0, 1),
+		UR(1, 1),
+		R(1, 0),
+		DR(1, -1),
+		D(0, -1),
+		DL(-1, -1),
+		L(-1, 0),
+		UL(-1, 1);
+
+		private KingMove(int xoff, int zoff) {
+			this.xOff = xoff;
+			this.zOff = zoff;
+		}
+
+		public final int xOff;
+		public final int zOff;
+	}
 }
