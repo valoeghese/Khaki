@@ -20,7 +20,7 @@ public class Main extends PanelTest {
 
 		// create worldgen
 		TerrainGenerator generator = new TerrainGenerator(new Random().nextLong());
-		generator.continentRadius = 1000;
+		generator.continentDiameter = 4000;
 		generator.riverInterpolationSteps = 10;
 
 		Display displays[] = {
@@ -36,13 +36,21 @@ public class Main extends PanelTest {
 					@Override
 					public void keyPressed(KeyEvent e) {
 						// special actions here
-						int chnumV = Character.getNumericValue(e.getKeyChar());
-						if (chnumV == 0) chnumV = 10; // because of arrangement on keyboard
-
-						if (chnumV > 0 && chnumV <= displays.length && chnumV != window.selected) {
-							window.selected = chnumV;
-							window.display = displays[chnumV - 1];
+						if (e.getKeyChar() == ' ') {
+							// mode special action
+							window.display.modifyView();
 							window.redraw(false);
+						}
+						else {
+							// mode type
+							int chnumV = Character.getNumericValue(e.getKeyChar());
+							if (chnumV == 0) chnumV = 10; // because of arrangement on keyboard
+
+							if (chnumV > 0 && chnumV <= displays.length && chnumV != window.selected) {
+								window.selected = chnumV;
+								window.display = displays[chnumV - 1];
+								window.redraw(false);
+							}
 						}
 					}
 				});
@@ -57,8 +65,13 @@ public class Main extends PanelTest {
 
 	@Override
 	public void redraw(boolean reuse) {
-		for (ViewChunk chunk : this.chunks.values()) {
-			chunk.shouldDestroy = true;
+		if (reuse) {
+			for (ViewChunk chunk : this.chunks.values()) {
+				chunk.shouldDestroy = true;
+			}
+		}
+		else {
+			this.chunks.clear();
 		}
 
 		super.redraw(reuse);

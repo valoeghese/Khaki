@@ -23,4 +23,8 @@ public final class Maths {
 	public static double sqr(double d) {
 		return d * d;
 	}
+
+	public static int rgb(int r, int g, int b) {
+		return (((r << 8) | g) << 8) | b;
+	}
 }

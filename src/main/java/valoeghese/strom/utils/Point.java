@@ -37,6 +37,10 @@ public class Point {
 		return this.add(other.x, other.y);
 	}
 
+	public Point mul(double by) {
+		return new Point(this.x * by, this.y * by, this.value);
+	}
+
 	public double squaredDist(Point other) {
 		return this.squaredDist(other.x, other.y);
 	}
@@ -93,4 +97,6 @@ public class Point {
 	public static Point onlyAt(double x, double y) {
 		return new Point(x, y, 0);
 	}
+
+	public static Point ORIGIN = new Point(0, 0);
 }
