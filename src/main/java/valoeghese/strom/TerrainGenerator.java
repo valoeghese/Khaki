@@ -23,15 +23,21 @@ public class TerrainGenerator {
 	private final Voronoi voronoi;
 
 	// inputs in scaled coordinate landscape
-	public int _testVoronoiPoints(int x, int y, boolean raw) {
+	public int _testVoronoiPoints(int x, int y, boolean raw, boolean innerLines) {
 		// continent diminished diameter
 		double cDimDiameter = this.continentDiameter >> DIMINISHED_SCALE_SHIFT;
 
-		// axes for every 1000 blocks
-		if (x % (1000 >> DIMINISHED_SCALE_SHIFT) == 0) return 0;
-		if (y % (1000 >> DIMINISHED_SCALE_SHIFT) == 0) return 0;
+		// axes for every ~1000 blocks
+		if (x % (5 * (200 >> DIMINISHED_SCALE_SHIFT)) == 0) return 0;
+		if (y % (5 * (200 >> DIMINISHED_SCALE_SHIFT)) == 0) return 0;
 
-		final double voronoiSize = cDimDiameter * 1.5; // extra area for oceans
+		if (innerLines) {
+			// axes for every ~200 blocks
+			if (x % (200 >> DIMINISHED_SCALE_SHIFT) == 0) return Maths.rgb(100, 100, 100);
+			if (y % (200 >> DIMINISHED_SCALE_SHIFT) == 0) return Maths.rgb(100, 100, 100);
+		}
+
+		final double voronoiSize = cDimDiameter * 1.6; // extra area for oceans
 
 		// voronoi regions
 		// shift into voronoi space
@@ -50,8 +56,13 @@ public class TerrainGenerator {
 		double cDimRad = cDimDiameter * 0.5; // radius
 
 		// processed, show land and sea areas
-		if (point.squaredDist(x, y) < cDimRad * cDimRad) {
+		double sqrDist = point.squaredDist(x, y);
+
+		if (sqrDist < cDimRad * cDimRad) {
 			return Maths.rgb(20, 200, 0);
+		}
+		if (sqrDist < Maths.sqr(cDimRad + (100 >> DIMINISHED_SCALE_SHIFT))) {
+			return Maths.rgb(0, 160, 160);
 		}
 		else {
 			return Maths.rgb(0, 60, 120);

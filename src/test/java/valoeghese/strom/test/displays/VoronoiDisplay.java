@@ -1,6 +1,7 @@
 package valoeghese.strom.test.displays;
 
 import valoeghese.strom.TerrainGenerator;
+import valoeghese.strom.test.Main;
 import valoeghese.strom.test.ViewChunk;
 import valoeghese.strom.test.IntPoint;
 
@@ -20,7 +21,7 @@ public class VoronoiDisplay implements Display {
 
 		for (int xo = 0; xo < ViewChunk.CHUNK_SIZE; xo++) {
 			for (int yo = 0; yo < ViewChunk.CHUNK_SIZE; yo++) {
-				chunk.set(xo, yo, this.generator._testVoronoiPoints(chunk.startX + xo, chunk.startY + yo, this.raw));
+				chunk.set(xo, yo, this.generator._testVoronoiPoints(chunk.startX + xo, chunk.startY + yo, this.raw, Main.window.getScale() < 8));
 			}
 		}
 

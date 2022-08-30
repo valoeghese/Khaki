@@ -29,6 +29,10 @@ public abstract class PanelTest extends JPanel {
 		return this;
 	}
 
+	public int getScale() {
+		return this.scale;
+	}
+
 	public PanelTest icon(String icon) {
 		this.icon = icon;
 		return this;

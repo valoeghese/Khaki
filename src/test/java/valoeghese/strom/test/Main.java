@@ -27,7 +27,7 @@ public class Main extends PanelTest {
 				new VoronoiDisplay(generator)
 		};
 
-		Main window = (Main) new Main().scale(2).size(800);
+		window = (Main) new Main().scale(2).size(800);
 		window.selected = displays.length;
 		window.display = displays[window.selected - 1];
 
@@ -103,4 +103,6 @@ public class Main extends PanelTest {
 		chunk.shouldDestroy = false;
 		return chunk.get(x & ViewChunk.CHUNK_MOD, y & ViewChunk.CHUNK_MOD);
 	}
+
+	public static Main window;
 }
