@@ -1,4 +1,4 @@
-package valoeghese.strom;
+package valoeghese.strom.utils;
 
 public class Point {
 	public Point(double x, double y) {

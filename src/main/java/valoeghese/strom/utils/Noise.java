@@ -1,4 +1,4 @@
-package valoeghese.strom;
+package valoeghese.strom.utils;
 
 import java.util.Random;
 

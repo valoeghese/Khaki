@@ -1,4 +1,4 @@
-package valoeghese.strom;
+package valoeghese.strom.utils;
 
 public final class Voronoi {
 	public Voronoi(long seed, double relaxation) {
