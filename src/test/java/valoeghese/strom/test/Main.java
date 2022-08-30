@@ -1,6 +1,7 @@
 package valoeghese.strom.test;
 
 import valoeghese.strom.TerrainGenerator;
+import valoeghese.strom.test.displays.BaseDisplay;
 import valoeghese.strom.test.displays.Display;
 import valoeghese.strom.test.displays.VoronoiDisplay;
 
@@ -24,7 +25,8 @@ public class Main extends PanelTest {
 		generator.riverInterpolationSteps = 10;
 
 		Display displays[] = {
-				new VoronoiDisplay(generator)
+				new VoronoiDisplay(generator),
+				new BaseDisplay(generator)
 		};
 
 		window = (Main) new Main().scale(2).size(800);
@@ -86,8 +88,8 @@ public class Main extends PanelTest {
 	@Override
 	protected int getColour(int x, int y) {
 		// adjust positions
-		x >>= 3;
-		y = -(y >> 3);
+		x >>= 2;
+		y = -(y >> 2);
 
 		IntPoint key = new IntPoint(x >> ViewChunk.CHUNK_SHIFT, y >> ViewChunk.CHUNK_SHIFT);
 

@@ -1,9 +1,11 @@
 package valoeghese.strom;
 
-import valoeghese.strom.utils.LloydVoronoi;
 import valoeghese.strom.utils.Maths;
+import valoeghese.strom.utils.Noise;
 import valoeghese.strom.utils.Point;
 import valoeghese.strom.utils.Voronoi;
+
+import java.util.Random;
 
 public class TerrainGenerator {
 	// settings. change these.
@@ -14,15 +16,34 @@ public class TerrainGenerator {
 		this.seed = seed;
 
 		// initialise generators
-		//this.voronoi = new LloydVoronoi(123, 0.33);
-		this.voronoi = new Voronoi(123, 0.6);
+		//this.voronoi = new LloydVoronoi(seed, 0.33);
+		this.voronoi = new Voronoi(seed, 0.6);
+		this.noise = new Noise(new Random(seed));
 	}
 
 	// internal stuff
 	private final long seed;
 	private final Voronoi voronoi;
+	private final Noise noise;
 
-	// inputs in scaled coordinate landscape
+	// inputs in block coordinate landscape
+	// output in blocks between -128 and 256
+	// treat sea level = 0 (this is why we use -128 to 256 rather than -64 to 320)
+	public double sampleContinentBase(Point centre, int x, int y) {
+		// base heightmap is done via radial + noise
+
+		// scale that dist of radius = 1, then invert and clamp
+		double radial = 1.0 - centre.distance(x, y) / (continentDiameter * 0.5);
+
+		// manipulate, sum, clamp
+		return Math.max(-64, 0
+				+ 60 * (radial - 0.2)
+				+ 30 * this.noise.sample(x * BASE_DISTORT_FREQUENCY, y * BASE_DISTORT_FREQUENCY)
+				+ 20 * radial * this.noise.sample(x * BASE_HILLS_FREQUENCY, y * BASE_HILLS_FREQUENCY)
+		);
+	}
+
+	// inputs in diminished coordinate landscape
 	public int _testVoronoiPoints(int x, int y, boolean raw, boolean innerLines) {
 		// continent diminished diameter
 		double cDimDiameter = this.continentDiameter >> DIMINISHED_SCALE_SHIFT;
@@ -69,7 +90,10 @@ public class TerrainGenerator {
 		}
 	}
 
+	public static final double BASE_DISTORT_FREQUENCY = 1.0 / 850.0;
+	public static final double BASE_HILLS_FREQUENCY = 1.0 / 400.0;
+
 	// if a continent is gonna be around ~5000 blocks in radius, and we probably only want ~200x200, shift 4
 	// 4096/(2^4) = 256
-	private static final int DIMINISHED_SCALE_SHIFT = 4;
+	public static final int DIMINISHED_SCALE_SHIFT = 4;
 }

@@ -27,4 +27,18 @@ public final class Maths {
 	public static int rgb(int r, int g, int b) {
 		return (((r << 8) | g) << 8) | b;
 	}
+
+	public static int grey(double g) {
+		int i = (int) (g * 255);
+		return rgb(i, i, i);
+	}
+
+	/**
+	 * equivalent shift multiplier.
+	 * The equivalent multiplier for a left shift (and divider for right shift).
+	 * Useful for "shifting" doubles like ints
+ 	 */
+	public static int eqShMul(int n) {
+		return 2 << (n - 1);
+	}
 }

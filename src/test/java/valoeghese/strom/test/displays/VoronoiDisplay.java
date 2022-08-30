@@ -2,10 +2,6 @@ package valoeghese.strom.test.displays;
 
 import valoeghese.strom.TerrainGenerator;
 import valoeghese.strom.test.Main;
-import valoeghese.strom.test.ViewChunk;
-import valoeghese.strom.test.IntPoint;
-
-import java.util.Random;
 
 public class VoronoiDisplay implements Display {
 	public VoronoiDisplay(TerrainGenerator generator) {
@@ -16,16 +12,8 @@ public class VoronoiDisplay implements Display {
 	private boolean raw = false;
 
 	@Override
-	public ViewChunk genChunk(IntPoint point) {
-		ViewChunk chunk = new ViewChunk(point.x(), point.y());
-
-		for (int xo = 0; xo < ViewChunk.CHUNK_SIZE; xo++) {
-			for (int yo = 0; yo < ViewChunk.CHUNK_SIZE; yo++) {
-				chunk.set(xo, yo, this.generator._testVoronoiPoints(chunk.startX + xo, chunk.startY + yo, this.raw, Main.window.getScale() < 8));
-			}
-		}
-
-		return chunk;
+	public int getColour(int x, int y) {
+		return this.generator._testVoronoiPoints(x, y, this.raw, Main.window.getScale() < 8);
 	}
 
 	@Override
