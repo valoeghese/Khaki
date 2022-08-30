@@ -26,6 +26,7 @@ public class TerrainGenerator {
 	private final Voronoi voronoi;
 	private final Noise noise;
 
+	// calculates the height at a position, excluding continental features
 	// inputs in block coordinate landscape
 	// output in blocks between -128 and 256
 	// treat sea level = 0 (this is why we use -128 to 256 rather than -64 to 320)
@@ -39,7 +40,7 @@ public class TerrainGenerator {
 		return Math.max(-64, 0
 				+ 60 * (radial - 0.2)
 				+ 30 * this.noise.sample(x * BASE_DISTORT_FREQUENCY, y * BASE_DISTORT_FREQUENCY)
-				+ 20 * radial * this.noise.sample(x * BASE_HILLS_FREQUENCY, y * BASE_HILLS_FREQUENCY)
+				+ 30 * radial * Math.max(0, this.noise.sample(x * BASE_HILLS_FREQUENCY, y * BASE_HILLS_FREQUENCY)) // hills
 		);
 	}
 
@@ -91,7 +92,7 @@ public class TerrainGenerator {
 	}
 
 	public static final double BASE_DISTORT_FREQUENCY = 1.0 / 850.0;
-	public static final double BASE_HILLS_FREQUENCY = 1.0 / 400.0;
+	public static final double BASE_HILLS_FREQUENCY = 1.0 / 300.0;
 
 	// if a continent is gonna be around ~5000 blocks in radius, and we probably only want ~200x200, shift 4
 	// 4096/(2^4) = 256
