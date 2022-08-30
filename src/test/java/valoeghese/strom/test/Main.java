@@ -23,30 +23,35 @@ public class Main extends PanelTest {
 		generator.continentRadius = 1000;
 		generator.riverInterpolationSteps = 10;
 
-		Display display = new VoronoiDisplay(generator);
+		Display displays[] = {
+				new VoronoiDisplay(generator)
+		};
 
-		PanelTest inst = new Main(display).scale(2).size(800);
-		inst.addKeyListener(
+		Main window = (Main) new Main().scale(2).size(800);
+		window.selected = displays.length;
+		window.display = displays[window.selected - 1];
+
+		window.addKeyListener(
 				new KeyAdapter() {
 					@Override
 					public void keyPressed(KeyEvent e) {
 						// special actions here
-						if (e.getKeyChar() == ' ') {
-							mode = (mode + 1) & 1;
-							inst.redraw(false);
+						int chnumV = Character.getNumericValue(e.getKeyChar());
+						if (chnumV == 0) chnumV = 10; // because of arrangement on keyboard
+
+						if (chnumV > 0 && chnumV <= displays.length && chnumV != window.selected) {
+							window.selected = chnumV;
+							window.display = displays[chnumV - 1];
+							window.redraw(false);
 						}
 					}
 				});
 
-		inst.start("Khaki 2 / Strom: " + System.currentTimeMillis());
+		window.start("Khaki 2 / Strom: " + System.currentTimeMillis());
 	}
 
-	Main(Display display) {
-		this.display = display;
-	}
-
-	private final Display display;
-	private static int mode = 0;
+	private Display display;
+	private int selected = 0;
 
 	private Map<IntPoint, ViewChunk> chunks = new HashMap<>();
 
