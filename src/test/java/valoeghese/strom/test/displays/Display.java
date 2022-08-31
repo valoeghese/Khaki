@@ -24,6 +24,6 @@ public interface Display {
 	 * Called when a user hits the hotkey (space) for getting a new variant of the view.
 	 * Use for implementing multiple variants of one display in a single display.
 	 */
-	default void modifyView() {
+	default void modifyView(int direction) {
 	}
 }

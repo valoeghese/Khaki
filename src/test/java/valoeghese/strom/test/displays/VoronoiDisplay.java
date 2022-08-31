@@ -17,7 +17,7 @@ public class VoronoiDisplay implements Display {
 	}
 
 	@Override
-	public void modifyView() {
+	public void modifyView(int direction) {
 		this.raw = !this.raw;
 	}
 }

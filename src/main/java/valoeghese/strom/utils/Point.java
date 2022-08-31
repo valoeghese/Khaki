@@ -8,10 +8,10 @@ public class Point {
 	public Point(double x, double y) {
 		this.x = x;
 		this.y = y;
-		this.value = this.hashCode() * 29 + Double.hashCode(this.x);
+		this.value = this.hashCode() * 31 + Double.hashCode(this.x);
 	}
 
-	private Point(double x, double y, int value) {
+	public Point(double x, double y, int value) {
 		this.x = x;
 		this.y = y;
 		this.value = value;
@@ -37,12 +37,31 @@ public class Point {
 		return new Point(this.x + x, this.y + y);
 	}
 
+	public Point add(double x, double y, int newValue) {
+		return new Point(this.x + x, this.y + y, newValue);
+	}
+
 	public Point add(Point other) {
 		return this.add(other.x, other.y);
 	}
 
 	public Point mul(double by) {
 		return new Point(this.x * by, this.y * by, this.value);
+	}
+
+	public Point lerp(double progress, Point to) {
+		return new Point(
+				Maths.lerp(progress, this.x, to.x),
+				Maths.lerp(progress, this.y, to.y)
+		);
+	}
+
+	public Point lerpv(double progress, Point to) {
+		return new Point(
+				Maths.lerp(progress, this.x, to.x),
+				Maths.lerp(progress, this.y, to.y),
+				(int) Maths.lerp(progress, this.value, to.value)
+		);
 	}
 
 	public double squaredDist(Point other) {
@@ -80,8 +99,8 @@ public class Point {
 	@Override
 	public int hashCode() {
 		int result = 7;
-		result = 29 * result + Double.hashCode(this.x);
-		result = 29 * result + Double.hashCode(this.y);
+		result = 31 * result + Double.hashCode(this.x);
+		result = 31 * result + Double.hashCode(this.y);
 		return result;
 	}
 

@@ -1,16 +1,20 @@
 package valoeghese.strom;
 
+import valoeghese.strom.utils.ContinentData;
 import valoeghese.strom.utils.Maths;
 import valoeghese.strom.utils.Noise;
 import valoeghese.strom.utils.Point;
 import valoeghese.strom.utils.Voronoi;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class TerrainGenerator {
 	// settings. change these.
 	public int continentDiameter;
 	public int riverInterpolationSteps;
+	public int mountainsPerRange;
 
 	public TerrainGenerator(long seed) {
 		this.seed = seed;
@@ -26,19 +30,81 @@ public class TerrainGenerator {
 	private final Voronoi voronoi;
 	private final Noise noise;
 
+	public double mtnTransform(double v) {
+		return Math.sqrt(v); // 0.5 - 32 * Maths.pow5(Math.sqrt(v) - 0.5);
+	}
+
 	/**
-	 * Calculates the height at a position, excluding continental features.
+	 * Calculates the height at a position, excluding rivers.
 	 *
 	 * Inputs in block coordinate landscape
 	 * Output in blocks between -128 and 256 and treat sea level = 0 ({@code h < 0 = sea, h >= 0 = land})
 	 * Of course, in minecraft, sea level will be 63. However that is cringe so I shifted it down to 0.
 	 * If implementing this in your work, make sure to adjust the exact generation to and input/output space to suit your game.
- 	 */
-	public double sampleContinentBase(Point centre, int x, int y) {
-		// base heightmap is done via radial + noise
+	 */
+	public double sampleContinentBase(ContinentData continentData, int x, int y) {
+		// base heightmap is done via radial + noise + continental features
+
+		// ======== SHAPE ==========
 
 		// scale that dist of radius = 1, then invert and clamp
-		double radial = 1.0 - centre.distance(x, y) / (continentDiameter * 0.5);
+		double radial = 1.0 - continentData.centre().distance(x, y) / (continentDiameter * 0.5);
+
+		// manipulate, sum, clamp
+		double height = Maths.clamp(-64, 256, 0
+				+ 60 * (radial - 0.2)
+				+ 30 * this.noise.sample(x * BASE_DISTORT_FREQUENCY, y * BASE_DISTORT_FREQUENCY)
+				+ 30 * radial * Math.max(0, this.noise.sample(x * BASE_HILLS_FREQUENCY, y * BASE_HILLS_FREQUENCY)) // hills
+		);
+
+		// ======== MOUNTAINS ==========
+
+		// the TOTAL RADIUS which the mountain AFFECTS, not the radius of the "mountain feature" visually!
+		double modMtnRadius = mtnTransform(750);
+
+		// find the max mtn strength
+		// todo smoother transitions between mountains
+		double maxMtnStrength = 0;
+
+		// also treat height as weighted average of how 'strong' they are
+		double weightedMtnHeight = 0;
+		double weightsSum = 0.0001; // epsilon, prevent division by 0
+
+		for (Point p : continentData.mountains()) {
+			double d = 1.0 - mtnTransform(p.distance(x, y)) / modMtnRadius;
+			double mtnStrength = Maths.clamp(0, 1, d);
+
+			if (mtnStrength > maxMtnStrength) {
+				maxMtnStrength = mtnStrength;
+			}
+
+			// weight sum & add weighted height for weighted average blending
+			weightedMtnHeight += mtnStrength * p.getValue();
+			weightsSum += mtnStrength;
+		}
+
+		// max mtn strength affects terrain
+		height = Maths.lerp(maxMtnStrength, height, weightedMtnHeight / weightsSum);
+
+		return height;
+	}
+
+	/**
+	 * Calculates the height at a position, incorporating continental features in unusual ways useful for testing.
+	 *
+	 * Inputs in block coordinate landscape
+	 * Output in blocks between -128 and 256 and treat sea level = 0 ({@code h < 0 = sea, h >= 0 = land})
+	 * Of course, in minecraft, sea level will be 63. However that is cringe so I shifted it down to 0.
+	 * If implementing this in your work, make sure to adjust the exact generation to and input/output space to suit your game.
+	 */
+	public double _testContinentBase(ContinentData continentData, int x, int y) {
+		// base heightmap is done via radial + noise
+		for (Point p : continentData.mountains()) {
+			if (p.squaredDist(x, y) < 25 * 25) return 256;
+		}
+
+		// scale that dist of radius = 1, then invert and clamp
+		double radial = 1.0 - continentData.centre().distance(x, y) / (continentDiameter * 0.5);
 
 		// manipulate, sum, clamp
 		return Math.max(-64, 0
@@ -46,6 +112,62 @@ public class TerrainGenerator {
 				+ 30 * this.noise.sample(x * BASE_DISTORT_FREQUENCY, y * BASE_DISTORT_FREQUENCY)
 				+ 30 * radial * Math.max(0, this.noise.sample(x * BASE_HILLS_FREQUENCY, y * BASE_HILLS_FREQUENCY)) // hills
 		);
+	}
+
+	public ContinentData pregenerateContinentData(Point centre) {
+		final int minMtnHeight = 140;
+		final int deltaMtnHeight = 255 - minMtnHeight;
+		// IF CHANGING HEIGHT ALGORITHM, REPLACE ALL INSTANCES OF rand.nextInt(deltaMtnHeight) + minMtnHeight
+
+		// random for pregen
+		Random rand = new Random(centre.getValue() + this.seed);
+
+		List<Point[]> rivers = new ArrayList<>();
+
+		final int nMtns = this.mountainsPerRange;
+
+		Point[] mountainRange = new Point[nMtns];
+		double chainX = (rand.nextDouble() - 0.5) * 0.5 * this.continentDiameter + centre.getX();
+		double chainY = (rand.nextDouble() - 0.5) * 0.5 * this.continentDiameter + centre.getY();
+
+		// each point also carries, as a value, the mountain height.
+		Point start = new Point(chainX, chainY, rand.nextInt(deltaMtnHeight) + minMtnHeight);
+
+		double eDX = (rand.nextDouble() - 0.5) * 0.5 * this.continentDiameter; // endDX
+		double eDY =  (rand.nextDouble() - 0.5) * 0.5 * this.continentDiameter; // endDY
+		//System.out.println((Math.abs(eDX) + Math.abs(eDY)) / this.continentDiameter);
+
+		// inb4 edX and eDy ~= 0 and the game gets stuck in a very big loop
+		// sike let's harcode a fix for that
+		if (Math.abs(eDX) + Math.abs(eDY) < 0.002 * this.continentDiameter) {
+			//System.out.println("Applying emergency EDX offset");
+			eDX += (0.5 + rand.nextDouble()) * 0.3 * this.continentDiameter;
+		}
+
+		while (Math.abs(eDX) + Math.abs(eDY) < 0.175 * this.continentDiameter) {
+			//System.out.println("Amplifying Point Spread");
+			eDX *= 2;
+			eDY *= 2;
+		}
+
+		Point end = new Point(
+				chainX + eDX,
+				chainY + eDY,
+				rand.nextInt(deltaMtnHeight) + minMtnHeight
+		);
+
+		mountainRange[0] = start;
+		mountainRange[nMtns - 1] = end;
+
+		for (int i = 1; i < nMtns - 1; i++) {
+			mountainRange[i] = start.lerp((double) i / (double)(nMtns - 1), end).add(
+					(rand.nextDouble() - 0.5) * 0.05 * this.continentDiameter,
+					(rand.nextDouble() - 0.5) * 0.05 * this.continentDiameter,
+					rand.nextInt(deltaMtnHeight) + minMtnHeight
+			);
+		}
+
+		return new ContinentData(centre, mountainRange, rivers);
 	}
 
 	// inputs in diminished coordinate landscape

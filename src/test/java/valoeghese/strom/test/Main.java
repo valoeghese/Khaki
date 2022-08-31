@@ -1,7 +1,7 @@
 package valoeghese.strom.test;
 
 import valoeghese.strom.TerrainGenerator;
-import valoeghese.strom.test.displays.BaseDisplay;
+import valoeghese.strom.test.displays.ContinentDisplay;
 import valoeghese.strom.test.displays.Display;
 import valoeghese.strom.test.displays.VoronoiDisplay;
 
@@ -23,10 +23,11 @@ public class Main extends PanelTest {
 		TerrainGenerator generator = new TerrainGenerator(new Random().nextLong());
 		generator.continentDiameter = 4000;
 		generator.riverInterpolationSteps = 10;
+		generator.mountainsPerRange = 11;
 
 		Display displays[] = {
 				new VoronoiDisplay(generator),
-				new BaseDisplay(generator)
+				new ContinentDisplay(generator)
 		};
 
 		window = (Main) new Main().scale(2).size(800);
@@ -37,10 +38,17 @@ public class Main extends PanelTest {
 				new KeyAdapter() {
 					@Override
 					public void keyPressed(KeyEvent e) {
+						int code = e.getKeyCode();
+
 						// special actions here
-						if (e.getKeyChar() == ' ') {
+						if (code == 37) {
 							// mode special action
-							window.display.modifyView();
+							window.display.modifyView(-1);
+							window.redraw(false);
+						}
+						else if (code == 39 || e.getKeyChar() == ' ') {
+							// mode special action
+							window.display.modifyView(1);
 							window.redraw(false);
 						}
 						else {

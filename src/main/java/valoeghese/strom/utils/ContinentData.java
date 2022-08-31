@@ -16,11 +16,11 @@ import java.util.zip.GZIPOutputStream;
 /**
  * Pregenerated Continent Data.
  *
- * @param centre the centre point of the continent, in metres.
+ * @param centre the centre point of the continent, in blocks.
  * @param mountains the position of mountain peaks in a range on the continent.
  * @param rivers the paths of rivers in the continent.
  */
-public record PregeneratedContinentData(Point centre, Point[] mountains, List<Point[]> rivers) {
+public record ContinentData(Point centre, Point[] mountains, List<Point[]> rivers) {
 	public void write(File file) throws IOException {
 		try (DataOutputStream dos = new DataOutputStream(new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(file))))) {
 			dos.writeInt(0xA3A);
@@ -43,7 +43,7 @@ public record PregeneratedContinentData(Point centre, Point[] mountains, List<Po
 		}
 	}
 
-	public static PregeneratedContinentData read(File file) throws IOException, IllegalStateException {
+	public static ContinentData read(File file) throws IOException, IllegalStateException {
 		try (DataInputStream dis = new DataInputStream(new GZIPInputStream(new BufferedInputStream(new FileInputStream(file))))) {
 			int magic = dis.readInt();
 
@@ -81,7 +81,7 @@ public record PregeneratedContinentData(Point centre, Point[] mountains, List<Po
 				rivers.add(river);
 			}
 
-			return new PregeneratedContinentData(centre, mountains, rivers);
+			return new ContinentData(centre, mountains, rivers);
 		}
 	}
 }
