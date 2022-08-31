@@ -26,10 +26,14 @@ public class TerrainGenerator {
 	private final Voronoi voronoi;
 	private final Noise noise;
 
-	// calculates the height at a position, excluding continental features
-	// inputs in block coordinate landscape
-	// output in blocks between -128 and 256
-	// treat sea level = 0 (this is why we use -128 to 256 rather than -64 to 320)
+	/**
+	 * Calculates the height at a position, excluding continental features.
+	 *
+	 * Inputs in block coordinate landscape
+	 * Output in blocks between -128 and 256 and treat sea level = 0 ({@code h < 0 = sea, h >= 0 = land})
+	 * Of course, in minecraft, sea level will be 63. However that is cringe so I shifted it down to 0.
+	 * If implementing this in your work, make sure to adjust the exact generation to and input/output space to suit your game.
+ 	 */
 	public double sampleContinentBase(Point centre, int x, int y) {
 		// base heightmap is done via radial + noise
 

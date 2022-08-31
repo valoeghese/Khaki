@@ -1,5 +1,9 @@
 package valoeghese.strom.utils;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
 public class Point {
 	public Point(double x, double y) {
 		this.x = x;
@@ -88,6 +92,12 @@ public class Point {
 				+ ')';
 	}
 
+	public void write(DataOutput out) throws IOException {
+		out.writeDouble(this.x);
+		out.writeDouble(this.y);
+		out.writeInt(this.value);
+	}
+
 	/**
 	 * Creates a point at the given position, and with no other associated information.
 	 * @param x the x position.
@@ -96,6 +106,10 @@ public class Point {
 	 */
 	public static Point onlyAt(double x, double y) {
 		return new Point(x, y, 0);
+	}
+
+	public static Point read(DataInput in) throws IOException {
+		return new Point(in.readDouble(), in.readDouble(), in.readInt());
 	}
 
 	public static Point ORIGIN = new Point(0, 0);
