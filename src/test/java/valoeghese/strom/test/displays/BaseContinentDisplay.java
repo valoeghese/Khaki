@@ -1,11 +1,12 @@
 package valoeghese.strom.test.displays;
 
+import valoeghese.strom.ContinentData;
 import valoeghese.strom.TerrainGenerator;
 import valoeghese.strom.utils.Maths;
 
 public class BaseContinentDisplay extends ContinentDisplay {
-	public BaseContinentDisplay(TerrainGenerator generator) {
-		super(generator);
+	public BaseContinentDisplay(TerrainGenerator generator, ContinentData pregeneratedData) {
+		super(generator, pregeneratedData);
 		this.viewModes = 0x3;
 	}
 

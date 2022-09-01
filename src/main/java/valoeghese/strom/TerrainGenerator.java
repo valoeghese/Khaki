@@ -11,13 +11,19 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Consumer;
 
 public class TerrainGenerator {
 	// settings. change these.
 	public int continentDiameter;
 	public int riverInterpolationSteps;
 	public int mountainsPerRange;
+	// merge threshold for river node points, i.e. the smallest manhattan distance at which they become the same point
+	public double mergeThreshold;
 	public double riverStep;
+
+	// optional settings. you can change these
+	public Consumer<String> warn = s -> {};
 
 	public TerrainGenerator(long seed) {
 		this.seed = seed;
@@ -66,7 +72,7 @@ public class TerrainGenerator {
 		double modMtnRadius = mtnTransform(750);
 
 		// find the max mtn strength
-		// todo smoother transitions between mountains
+		// todo smoother transitions between mountains?
 		double maxMtnStrength = 0;
 
 		// also treat height as weighted average of how 'strong' they are
@@ -120,7 +126,7 @@ public class TerrainGenerator {
 			eDX += (0.5 + rand.nextDouble()) * 0.3 * this.continentDiameter;
 		}
 
-		while (Math.abs(eDX) + Math.abs(eDY) < 0.175 * this.continentDiameter) {
+		while (Math.abs(eDX) + Math.abs(eDY) < 0.225 * this.continentDiameter) {
 			//System.out.println("Amplifying Point Spread");
 			eDX *= 2;
 			eDY *= 2;
@@ -147,7 +153,8 @@ public class TerrainGenerator {
 	}
 
 	private ContinentData generateRivers(ContinentData continentData, Random rand) {
-		final int nRiversToGenerate = 3;
+		final int nRiversToGenerate = 7;
+		List<Point> mtnPositions = new LinkedList<>(Arrays.asList(continentData.mountains()));
 
 		for (int i = 0; i < nRiversToGenerate; i++) {
 			List<Point> river = new ArrayList<>();
@@ -156,14 +163,19 @@ public class TerrainGenerator {
 			// start in the mountains
 			// https://stackoverflow.com/questions/2043783/how-to-efficiently-performance-remove-many-items-from-list-in-java
 			// Linked list structure is better for removing items since it just has to change node connections
-			List<Point> mtnPositions = new LinkedList<>(Arrays.asList(continentData.mountains()));
+
 
 			Point riverNodePos = Maths.tttr(mtnPositions, rand)
-					.lerp(0.5, Maths.tttr(mtnPositions, rand));
+					.lerp(rand.nextDouble() * 0.1 + 0.5, Maths.tttr(mtnPositions, rand));
 
 			river.add(riverNodePos);
 
+			// the node to merge with, when two rivers combine.
+			Node merge = null;
+			double lastHeight = Double.MAX_VALUE;
+
 			// follow the river path until it hits its lowest point or sea level
+			riverFlow:
 			while (true) {
 				double x = riverNodePos.getX();
 				double y = riverNodePos.getY();
@@ -178,13 +190,16 @@ public class TerrainGenerator {
 					break;
 				}
 
+				// try get unstuck from oscillations between points when in a pit
+				boolean forcedSearchStep = lastHeight < h;
+
 				double riverSearchStep = this.riverStep;
 				int searchSteps = 0;
 				// height positive-y, etc
-				double hPx = 0, hPy = 0, hNy = 0, hNx = 0;
+				double hPx, hPy, hNy, hNx;
 
 				do {
-					searchSteps++;
+					if (++searchSteps == 2) forcedSearchStep = false;
 
 					// calculate surrounding heights
 					hPy = this.sampleContinentBase(continentData, (int) x, (int) (y + riverSearchStep));
@@ -195,25 +210,48 @@ public class TerrainGenerator {
 					// if stuck in a ditch, flood-fill search for the exit, then make a mad dash
 					riverSearchStep += this.riverStep;
 					//if (searchSteps > 1) System.out.printf("%d >> %.3f | %.3f %.3f %.3f %.3f\n", searchSteps, h, hPy, hPx, hNy, hNx);
-				} while (hPx >= h && hPy >= h && hNx >= h && hNy >= h);
+				} while (forcedSearchStep || (hPx >= h && hPy >= h && hNx >= h && hNy >= h));
 
 				// calculate vector directions for flow based on height difference
 				// negative - positive to get downwards flow
-				double dy = hNy - hPy;
+				// retreating from high points seems to yield better results going down, vice versa for up
+				// just gonna use the centre difference
 				double dx = hNx - hPx;
+				double dy = hNy - hPy;
 
 				// normalise and multiply to size 'riverStep'
 				double normalisationFactor = 1.0 / Math.sqrt(dy * dy + dx * dx);
-
 				dy *= normalisationFactor * this.riverStep;
 				dx *= normalisationFactor * this.riverStep;
 
 				// next point(s)
 				for (int j = 0; j < searchSteps; j++) {
+					//if (j > 5) System.out.println("Searching... " + j);
 					x += dx;
 					y += dy;
 					riverNodePos = new Point(x, y);
+
+					// check for nodes to merge with in this gridbox
+					// cant be bothered using compute power to search neighbours so cope. if they get close enough across borders I'm sure they'll merge soon after
+					for (Node node : continentData.rivers().get((int) x, (int) y)) {
+						if (Math.abs(node.current().getX() - x) + Math.abs(node.current().getY() - y) <= this.mergeThreshold) {
+							merge = node;
+							river.add(node.current()); // add the node position instead of the close position to the node
+							//System.out.println("merging...");
+							break riverFlow;
+						}
+					}
+
 					river.add(riverNodePos);
+				}
+
+				// keep track of this
+				lastHeight = h;
+
+				// also no.
+				if (river.size() > 10_000) {
+					this.warn.accept("Took longer than 10 thousand iterations to find a river path... forcing end!");
+					break;
 				}
 			}
 

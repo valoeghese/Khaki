@@ -5,14 +5,9 @@ import valoeghese.strom.ContinentData;
 import valoeghese.strom.utils.Point;
 
 public abstract class ContinentDisplay implements Display {
-	public ContinentDisplay(TerrainGenerator generator) {
+	public ContinentDisplay(TerrainGenerator generator, ContinentData pregeneratedData) {
 		this.generator = generator;
-
-		long t = System.currentTimeMillis();
-		this.pregeneratedData = this.generator.pregenerateContinentData(Point.ORIGIN);
-		t = System.currentTimeMillis() - t;
-
-		System.out.printf("Pregenerated Continent Data in %dms\n", t);
+		this.pregeneratedData = pregeneratedData;
 	}
 
 	protected final TerrainGenerator generator;

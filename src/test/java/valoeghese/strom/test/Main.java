@@ -1,10 +1,12 @@
 package valoeghese.strom.test;
 
+import valoeghese.strom.ContinentData;
 import valoeghese.strom.TerrainGenerator;
 import valoeghese.strom.test.displays.BaseContinentDisplay;
 import valoeghese.strom.test.displays.Display;
 import valoeghese.strom.test.displays.RiverContinentDisplay;
 import valoeghese.strom.test.displays.VoronoiDisplay;
+import valoeghese.strom.utils.Point;
 
 import javax.swing.*;
 import java.awt.event.KeyAdapter;
@@ -19,18 +21,28 @@ import java.util.Random;
 public class Main extends PanelTest {
 	public static void main(String[] args) throws Exception {
 		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		long seed = new Random().nextLong();
+		System.out.println("Using Seed: " + seed);
 
 		// create worldgen
-		TerrainGenerator generator = new TerrainGenerator(new Random().nextLong());
+		TerrainGenerator generator = new TerrainGenerator(seed);
 		generator.continentDiameter = 4000;
 		generator.riverInterpolationSteps = 10;
 		generator.mountainsPerRange = 11;
 		generator.riverStep = 16;
+		generator.mergeThreshold = 12.0;
+		generator.warn = System.err::println;
+
+		// Pregenerate the central continent data
+		long t = System.currentTimeMillis();
+		ContinentData pregeneratedData = generator.pregenerateContinentData(Point.ORIGIN);
+		t = System.currentTimeMillis() - t;
+		System.out.printf("Pregenerated Continent Data in %dms\n", t);
 
 		Display displays[] = {
 				new VoronoiDisplay(generator),
-				new BaseContinentDisplay(generator),
-				new RiverContinentDisplay(generator)
+				new BaseContinentDisplay(generator, pregeneratedData),
+				new RiverContinentDisplay(generator, pregeneratedData)
 		};
 
 		window = (Main) new Main().scale(2).size(800);

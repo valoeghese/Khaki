@@ -1,11 +1,12 @@
 package valoeghese.strom.test.displays;
 
+import valoeghese.strom.ContinentData;
 import valoeghese.strom.TerrainGenerator;
 import valoeghese.strom.utils.Maths;
 
 public class RiverContinentDisplay extends ContinentDisplay {
-	public RiverContinentDisplay(TerrainGenerator generator) {
-		super(generator);
+	public RiverContinentDisplay(TerrainGenerator generator, ContinentData pregeneratedData) {
+		super(generator, pregeneratedData);
 	}
 
 	@Override
