@@ -1,8 +1,7 @@
 package valoeghese.strom.test.displays;
 
 import valoeghese.strom.TerrainGenerator;
-import valoeghese.strom.utils.ContinentData;
-import valoeghese.strom.utils.Maths;
+import valoeghese.strom.ContinentData;
 import valoeghese.strom.utils.Point;
 
 public abstract class ContinentDisplay implements Display {

@@ -132,4 +132,5 @@ public class Point {
 	}
 
 	public static Point ORIGIN = new Point(0, 0);
+	public static Point NONE = new Point(Double.NaN, Double.NaN);
 }

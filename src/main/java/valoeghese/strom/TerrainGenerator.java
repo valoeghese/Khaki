@@ -1,6 +1,6 @@
 package valoeghese.strom;
 
-import valoeghese.strom.utils.ContinentData;
+import valoeghese.strom.utils.GridBox;
 import valoeghese.strom.utils.Maths;
 import valoeghese.strom.utils.Noise;
 import valoeghese.strom.utils.Point;
@@ -143,7 +143,7 @@ public class TerrainGenerator {
 			);
 		}
 
-		return this.generateRivers(new ContinentData(centre, mountainRange, new ArrayList<>()), rand);
+		return this.generateRivers(new ContinentData(centre, mountainRange, new GridBox<>(GRID_BOX_SIZE, 1 + this.continentDiameter / (2 * GRID_BOX_SIZE))), rand);
 	}
 
 	private ContinentData generateRivers(ContinentData continentData, Random rand) {
@@ -158,15 +158,15 @@ public class TerrainGenerator {
 			// Linked list structure is better for removing items since it just has to change node connections
 			List<Point> mtnPositions = new LinkedList<>(Arrays.asList(continentData.mountains()));
 
-			Point riverPos = Maths.tttr(mtnPositions, rand)
+			Point riverNodePos = Maths.tttr(mtnPositions, rand)
 					.lerp(0.5, Maths.tttr(mtnPositions, rand));
 
-			river.add(riverPos);
+			river.add(riverNodePos);
 
 			// follow the river path until it hits its lowest point or sea level
 			while (true) {
-				double x = riverPos.getX();
-				double y = riverPos.getY();
+				double x = riverNodePos.getX();
+				double y = riverNodePos.getY();
 
 				// current river height
 				double h = this.sampleContinentBase(continentData, (int) x, (int) y);
@@ -212,13 +212,22 @@ public class TerrainGenerator {
 				for (int j = 0; j < searchSteps; j++) {
 					x += dx;
 					y += dy;
-					riverPos = new Point(x, y);
-					river.add(riverPos);
+					riverNodePos = new Point(x, y);
+					river.add(riverNodePos);
 				}
 			}
 
-			// add to our continent data rivers
-			continentData.rivers().add(river.toArray(new Point[river.size()]));
+			// convert to nodes
+			// and add to our continent data rivers
+			// todo merge rivers if we get close
+			// todo river width & height values stored
+			Point previous = Point.NONE;
+
+			for (Point point : river) {
+				continentData.rivers().add((int) point.getX(), (int) point.getY(), new Node(previous, point));
+
+				previous = point;
+			}
 		}
 
 		return continentData;
@@ -282,17 +291,12 @@ public class TerrainGenerator {
 	 * If implementing this in your work, make sure to adjust the exact generation to and input/output space to suit your game.
 	 */
 	public double _testContinentBase(ContinentData continentData, int x, int y) {
-		// base heightmap is done via radial + noise
+		// mountain info
 		for (Point p : continentData.mountains()) {
 			if (p.squaredDist(x, y) < 25 * 25) return 256;
 		}
 
-		for (Point[] ps : continentData.rivers()) {
-			for (Point p : ps) {
-				if (p.squaredDist(x, y) < 10 * 10) return -128;
-			}
-		}
-
+		// base heightmap is done via radial + noise
 		// scale that dist of radius = 1, then invert and clamp
 		double radial = 1.0 - continentData.centre().distance(x, y) / (continentDiameter * 0.5);
 
@@ -313,10 +317,15 @@ public class TerrainGenerator {
 	 * If implementing this in your work, make sure to adjust the exact generation to and input/output space to suit your game.
 	 */
 	public double _testContinentRiver(ContinentData continentData, int x, int y) {
-		// base heightmap is done via radial + noise
-		for (Point[] ps : continentData.rivers()) {
-			for (Point p : ps) {
-				if (p.squaredDist(x, y) < 10 * 10) return -128;
+		// river info
+		int gridX = continentData.rivers().gridSpace(x);
+		int gridY = continentData.rivers().gridSpace(y);
+
+		for (int gxo = -1; gxo <= 1; gxo++) {
+			for (int gyo = -1; gyo <= 1; gyo++) {
+				for (Node node : continentData.rivers().getGridBox(gridX + gxo, gridY + gyo)) {
+					if (node.current().squaredDist(x, y) < 10 * 10) return -128;
+				}
 			}
 		}
 
@@ -326,4 +335,5 @@ public class TerrainGenerator {
 
 	public static final double BASE_DISTORT_FREQUENCY = 1.0 / 850.0;
 	public static final double BASE_HILLS_FREQUENCY = 1.0 / 300.0;
+	public static final int GRID_BOX_SIZE = 64;
 }

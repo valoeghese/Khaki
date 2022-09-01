@@ -1,4 +1,8 @@
-package valoeghese.strom.utils;
+package valoeghese.strom;
+
+import org.jetbrains.annotations.Nullable;
+import valoeghese.strom.utils.GridBox;
+import valoeghese.strom.utils.Point;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -8,7 +12,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -20,7 +24,7 @@ import java.util.zip.GZIPOutputStream;
  * @param mountains the position of mountain peaks in a range on the continent.
  * @param rivers the paths of rivers in the continent.
  */
-public record ContinentData(Point centre, Point[] mountains, List<Point[]> rivers) {
+public record ContinentData(Point centre, Point[] mountains, GridBox<Node> rivers) {
 	public void write(File file) throws IOException {
 		try (DataOutputStream dos = new DataOutputStream(new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(file))))) {
 			dos.writeInt(0xA3A);
@@ -34,11 +38,19 @@ public record ContinentData(Point centre, Point[] mountains, List<Point[]> river
 			for (Point p : mountains) p.write(dos);
 
 			// write rivers
-			dos.writeInt(rivers.size());
+			dos.writeInt(rivers.getBoxSize());
+			dos.writeInt(rivers.getSquareRadius());
 
-			for (Point[] ps : rivers) {
-				dos.writeInt(ps.length);
-				for (Point p : ps) p.write(dos);
+			for (List<Node>[] column : rivers.toArray()) {
+				for (@Nullable List<Node> entry : column) {
+					if (entry == null) {
+						dos.writeInt(0);
+					}
+					else {
+						dos.writeInt(entry.size());
+						for (Node n : entry) n.write(dos);
+					}
+				}
 			}
 		}
 	}
@@ -68,17 +80,25 @@ public record ContinentData(Point centre, Point[] mountains, List<Point[]> river
 			}
 
 			// rivers
-			int riverCount = dis.readInt();
-			List<Point[]> rivers = new ArrayList<>(riverCount);
+			int boxSize = dis.readInt();
+			int sqrRad = dis.readInt();
 
-			for (int i = 0; i < riverCount; i++) {
-				Point[] river = new Point[dis.readInt()];
+			GridBox<Node> rivers = new GridBox<>(boxSize, sqrRad);
 
-				for (int j = 0; j < river.length; j++) {
-					river[j] = Point.read(dis);
+			for (int x = 0; x < sqrRad * 2; x++) {
+				for (int y = 0; y < sqrRad * 2; y++) {
+					int size = dis.readInt();
+
+					if (size > 0) {
+						List<Node> riverNodes = new LinkedList<>();
+
+						for (int i = 0; i < size; i++) {
+							riverNodes.add(Node.read(dis));
+						}
+
+						rivers.put(x, y, riverNodes);
+					}
 				}
-
-				rivers.add(river);
 			}
 
 			return new ContinentData(centre, mountains, rivers);
