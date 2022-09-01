@@ -148,7 +148,6 @@ public class TerrainGenerator {
 
 	private ContinentData generateRivers(ContinentData continentData, Random rand) {
 		final int nRiversToGenerate = 3;
-		final double riverSearchStep = this.riverStep;
 
 		for (int i = 0; i < nRiversToGenerate; i++) {
 			List<Point> river = new ArrayList<>();
@@ -179,18 +178,24 @@ public class TerrainGenerator {
 					break;
 				}
 
-				// height positive-y
-				double hPy = this.sampleContinentBase(continentData, (int) x, (int) (y + riverSearchStep));
-				// etc
-				double hPx = this.sampleContinentBase(continentData, (int) (x + riverSearchStep), (int) y);
-				double hNy = this.sampleContinentBase(continentData, (int) x, (int) (y - riverSearchStep));
-				double hNx = this.sampleContinentBase(continentData, (int) (x - riverSearchStep), (int) y);
+				double riverSearchStep = this.riverStep;
+				int searchSteps = 0;
+				// height positive-y, etc
+				double hPx = 0, hPy = 0, hNy = 0, hNx = 0;
 
-				// if stuck in a ditch, exit.
-				// todo unstuck yourself, or create a lake or flow into a cave or something
-//				if (hPx >= h && hPy >= h && hNx >= h && hNy >= h) {
-//					break;
-//				}
+				do {
+					searchSteps++;
+
+					// calculate surrounding heights
+					hPy = this.sampleContinentBase(continentData, (int) x, (int) (y + riverSearchStep));
+					hPx = this.sampleContinentBase(continentData, (int) (x + riverSearchStep), (int) y);
+					hNy = this.sampleContinentBase(continentData, (int) x, (int) (y - riverSearchStep));
+					hNx = this.sampleContinentBase(continentData, (int) (x - riverSearchStep), (int) y);
+
+					// if stuck in a ditch, flood-fill search for the exit, then make a mad dash
+					riverSearchStep += this.riverStep;
+					//if (searchSteps > 1) System.out.printf("%d >> %.3f | %.3f %.3f %.3f %.3f\n", searchSteps, h, hPy, hPx, hNy, hNx);
+				} while (hPx >= h && hPy >= h && hNx >= h && hNy >= h);
 
 				// calculate vector directions for flow based on height difference
 				// negative - positive to get downwards flow
@@ -203,9 +208,13 @@ public class TerrainGenerator {
 				dy *= normalisationFactor * this.riverStep;
 				dx *= normalisationFactor * this.riverStep;
 
-				// next point
-				riverPos = new Point(x + dx, y + dy);
-				river.add(riverPos);
+				// next point(s)
+				for (int j = 0; j < searchSteps; j++) {
+					x += dx;
+					y += dy;
+					riverPos = new Point(x, y);
+					river.add(riverPos);
+				}
 			}
 
 			// add to our continent data rivers
