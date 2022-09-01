@@ -1,0 +1,22 @@
+package valoeghese.strom.test.displays;
+
+import valoeghese.strom.TerrainGenerator;
+import valoeghese.strom.utils.Maths;
+
+public class RiverContinentDisplay extends ContinentDisplay {
+	public RiverContinentDisplay(TerrainGenerator generator) {
+		super(generator);
+	}
+
+	@Override
+	public int getColour(int x, int y) {
+		double height = this.generator._testContinentRiver(this.pregeneratedData, x, y);
+
+		if ((this.viewMode & 0x1) == 1) {
+			return height < 0 ? Maths.rgb(0, 0, 200) : Maths.rgb(0, (int) Maths.clampMap(height, 0, 256, 128, 255), 0);
+		}
+		else {
+			return Maths.grey(Maths.clampMap(height, -128, 256, 0, 1));
+		}
+	}
+}

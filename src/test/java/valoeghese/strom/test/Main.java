@@ -1,8 +1,9 @@
 package valoeghese.strom.test;
 
 import valoeghese.strom.TerrainGenerator;
-import valoeghese.strom.test.displays.ContinentDisplay;
+import valoeghese.strom.test.displays.BaseContinentDisplay;
 import valoeghese.strom.test.displays.Display;
+import valoeghese.strom.test.displays.RiverContinentDisplay;
 import valoeghese.strom.test.displays.VoronoiDisplay;
 
 import javax.swing.*;
@@ -24,10 +25,12 @@ public class Main extends PanelTest {
 		generator.continentDiameter = 4000;
 		generator.riverInterpolationSteps = 10;
 		generator.mountainsPerRange = 11;
+		generator.riverStep = 16;
 
 		Display displays[] = {
 				new VoronoiDisplay(generator),
-				new ContinentDisplay(generator)
+				new BaseContinentDisplay(generator),
+				new RiverContinentDisplay(generator)
 		};
 
 		window = (Main) new Main().scale(2).size(800);

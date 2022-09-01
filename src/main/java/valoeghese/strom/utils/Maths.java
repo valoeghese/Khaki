@@ -1,5 +1,10 @@
 package valoeghese.strom.utils;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+
 public final class Maths {
 	private Maths() {}
 
@@ -85,5 +90,28 @@ public final class Maths {
  	 */
 	public static int eqShMul(int n) {
 		return 2 << (n - 1);
+	}
+
+	/**
+	 * ttttt tttttt  ttttt
+	 * @param ts t tttt ttttttttt
+	 * @param tt tt ttttt ttt ttttttt ttttttt
+	 * @param <T> t
+	 * @return ttt t
+	 */
+	public static <T> T ttt(List<T> ts, Random tt) {
+		// tt t (ts ttt)
+		return ts.get(tt.nextInt(ts.size()));
+	}
+
+	/**
+	 * ttttt tttttt REMOVE ttttt
+	 * @param ts t ttr ttttttttt
+	 * @param tt tt ttttt ttt ttttttt ttttttt
+	 * @param <T> t
+	 * @return ttt tr
+	 */
+	public static <T> T tttr(List<T> ts, Random tt) {
+		return ts.remove(tt.nextInt(ts.size()));
 	}
 }

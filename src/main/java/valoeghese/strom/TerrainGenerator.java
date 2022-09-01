@@ -7,6 +7,8 @@ import valoeghese.strom.utils.Point;
 import valoeghese.strom.utils.Voronoi;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
@@ -15,6 +17,7 @@ public class TerrainGenerator {
 	public int continentDiameter;
 	public int riverInterpolationSteps;
 	public int mountainsPerRange;
+	public double riverStep;
 
 	public TerrainGenerator(long seed) {
 		this.seed = seed;
@@ -89,31 +92,6 @@ public class TerrainGenerator {
 		return height;
 	}
 
-	/**
-	 * Calculates the height at a position, incorporating continental features in unusual ways useful for testing.
-	 *
-	 * Inputs in block coordinate landscape
-	 * Output in blocks between -128 and 256 and treat sea level = 0 ({@code h < 0 = sea, h >= 0 = land})
-	 * Of course, in minecraft, sea level will be 63. However that is cringe so I shifted it down to 0.
-	 * If implementing this in your work, make sure to adjust the exact generation to and input/output space to suit your game.
-	 */
-	public double _testContinentBase(ContinentData continentData, int x, int y) {
-		// base heightmap is done via radial + noise
-		for (Point p : continentData.mountains()) {
-			if (p.squaredDist(x, y) < 25 * 25) return 256;
-		}
-
-		// scale that dist of radius = 1, then invert and clamp
-		double radial = 1.0 - continentData.centre().distance(x, y) / (continentDiameter * 0.5);
-
-		// manipulate, sum, clamp
-		return Math.max(-64, 0
-				+ 60 * (radial - 0.2)
-				+ 30 * this.noise.sample(x * BASE_DISTORT_FREQUENCY, y * BASE_DISTORT_FREQUENCY)
-				+ 30 * radial * Math.max(0, this.noise.sample(x * BASE_HILLS_FREQUENCY, y * BASE_HILLS_FREQUENCY)) // hills
-		);
-	}
-
 	public ContinentData pregenerateContinentData(Point centre) {
 		final int minMtnHeight = 140;
 		final int deltaMtnHeight = 255 - minMtnHeight;
@@ -121,8 +99,6 @@ public class TerrainGenerator {
 
 		// random for pregen
 		Random rand = new Random(centre.getValue() + this.seed);
-
-		List<Point[]> rivers = new ArrayList<>();
 
 		final int nMtns = this.mountainsPerRange;
 
@@ -167,22 +143,93 @@ public class TerrainGenerator {
 			);
 		}
 
-		return new ContinentData(centre, mountainRange, rivers);
+		return this.generateRivers(new ContinentData(centre, mountainRange, new ArrayList<>()), rand);
 	}
 
-	// inputs in diminished coordinate landscape
+	private ContinentData generateRivers(ContinentData continentData, Random rand) {
+		final int nRiversToGenerate = 3;
+		final double riverSearchStep = this.riverStep;
+
+		for (int i = 0; i < nRiversToGenerate; i++) {
+			List<Point> river = new ArrayList<>();
+
+			// generate the river points
+			// start in the mountains
+			// https://stackoverflow.com/questions/2043783/how-to-efficiently-performance-remove-many-items-from-list-in-java
+			// Linked list structure is better for removing items since it just has to change node connections
+			List<Point> mtnPositions = new LinkedList<>(Arrays.asList(continentData.mountains()));
+
+			Point riverPos = Maths.tttr(mtnPositions, rand)
+					.lerp(0.5, Maths.tttr(mtnPositions, rand));
+
+			river.add(riverPos);
+
+			// follow the river path until it hits its lowest point or sea level
+			while (true) {
+				double x = riverPos.getX();
+				double y = riverPos.getY();
+
+				// current river height
+				double h = this.sampleContinentBase(continentData, (int) x, (int) y);
+
+				// leave if in the ocean.
+				// might have to stretch a bit further in the future just in case but she'll be right bro
+				// intellij really thinks it's the CEO of english grammar huh
+				if (h < 0) {
+					break;
+				}
+
+				// height positive-y
+				double hPy = this.sampleContinentBase(continentData, (int) x, (int) (y + riverSearchStep));
+				// etc
+				double hPx = this.sampleContinentBase(continentData, (int) (x + riverSearchStep), (int) y);
+				double hNy = this.sampleContinentBase(continentData, (int) x, (int) (y - riverSearchStep));
+				double hNx = this.sampleContinentBase(continentData, (int) (x - riverSearchStep), (int) y);
+
+				// if stuck in a ditch, exit.
+				// todo unstuck yourself, or create a lake or flow into a cave or something
+//				if (hPx >= h && hPy >= h && hNx >= h && hNy >= h) {
+//					break;
+//				}
+
+				// calculate vector directions for flow based on height difference
+				// negative - positive to get downwards flow
+				double dy = hNy - hPy;
+				double dx = hNx - hPx;
+
+				// normalise and multiply to size 'riverStep'
+				double normalisationFactor = 1.0 / Math.sqrt(dy * dy + dx * dx);
+
+				dy *= normalisationFactor * this.riverStep;
+				dx *= normalisationFactor * this.riverStep;
+
+				// next point
+				riverPos = new Point(x + dx, y + dy);
+				river.add(riverPos);
+			}
+
+			// add to our continent data rivers
+			continentData.rivers().add(river.toArray(new Point[river.size()]));
+		}
+
+		return continentData;
+	}
+
+	// inputs in chunk landscape
 	public int _testVoronoiPoints(int x, int y, boolean raw, boolean innerLines) {
+		final int chunkScaleShift = 4;
+
 		// continent diminished diameter
-		double cDimDiameter = this.continentDiameter >> DIMINISHED_SCALE_SHIFT;
+		double cDimDiameter = this.continentDiameter >> chunkScaleShift;
 
 		// axes for every ~1000 blocks
-		if (x % (5 * (200 >> DIMINISHED_SCALE_SHIFT)) == 0) return 0;
-		if (y % (5 * (200 >> DIMINISHED_SCALE_SHIFT)) == 0) return 0;
+		if (x % (5 * (200 >> chunkScaleShift)) == 0) return 0;
+		if (y % (5 * (200 >> chunkScaleShift)) == 0) return 0;
 
 		if (innerLines) {
 			// axes for every ~200 blocks
-			if (x % (200 >> DIMINISHED_SCALE_SHIFT) == 0) return Maths.rgb(100, 100, 100);
-			if (y % (200 >> DIMINISHED_SCALE_SHIFT) == 0) return Maths.rgb(100, 100, 100);
+			if (x % (200 >> chunkScaleShift) == 0) return Maths.rgb(100, 100, 100);
+			if (y % (200 >> chunkScaleShift) == 0) return Maths.rgb(100, 100, 100);
 		}
 
 		final double voronoiSize = cDimDiameter * 1.6; // extra area for oceans
@@ -209,7 +256,7 @@ public class TerrainGenerator {
 		if (sqrDist < cDimRad * cDimRad) {
 			return Maths.rgb(20, 200, 0);
 		}
-		if (sqrDist < Maths.sqr(cDimRad + (100 >> DIMINISHED_SCALE_SHIFT))) {
+		if (sqrDist < Maths.sqr(cDimRad + (100 >> chunkScaleShift))) {
 			return Maths.rgb(0, 160, 160);
 		}
 		else {
@@ -217,10 +264,57 @@ public class TerrainGenerator {
 		}
 	}
 
+	/**
+	 * Calculates the height at a position, incorporating continental features without blending, useful for testing.
+	 *
+	 * Inputs in block coordinate landscape
+	 * Output in blocks between -128 and 256 and treat sea level = 0 ({@code h < 0 = sea, h >= 0 = land})
+	 * Of course, in minecraft, sea level will be 63. However that is cringe so I shifted it down to 0.
+	 * If implementing this in your work, make sure to adjust the exact generation to and input/output space to suit your game.
+	 */
+	public double _testContinentBase(ContinentData continentData, int x, int y) {
+		// base heightmap is done via radial + noise
+		for (Point p : continentData.mountains()) {
+			if (p.squaredDist(x, y) < 25 * 25) return 256;
+		}
+
+		for (Point[] ps : continentData.rivers()) {
+			for (Point p : ps) {
+				if (p.squaredDist(x, y) < 10 * 10) return -128;
+			}
+		}
+
+		// scale that dist of radius = 1, then invert and clamp
+		double radial = 1.0 - continentData.centre().distance(x, y) / (continentDiameter * 0.5);
+
+		// manipulate, sum, clamp
+		return Math.max(-64, 0
+				+ 60 * (radial - 0.2)
+				+ 30 * this.noise.sample(x * BASE_DISTORT_FREQUENCY, y * BASE_DISTORT_FREQUENCY)
+				+ 30 * radial * Math.max(0, this.noise.sample(x * BASE_HILLS_FREQUENCY, y * BASE_HILLS_FREQUENCY)) // hills
+		);
+	}
+
+	/**
+	 * Calculates the height at a position, incorporating river features without blending, useful for testing.
+	 *
+	 * Inputs in block coordinate landscape
+	 * Output in blocks between -128 and 256 and treat sea level = 0 ({@code h < 0 = sea, h >= 0 = land})
+	 * Of course, in minecraft, sea level will be 63. However that is cringe so I shifted it down to 0.
+	 * If implementing this in your work, make sure to adjust the exact generation to and input/output space to suit your game.
+	 */
+	public double _testContinentRiver(ContinentData continentData, int x, int y) {
+		// base heightmap is done via radial + noise
+		for (Point[] ps : continentData.rivers()) {
+			for (Point p : ps) {
+				if (p.squaredDist(x, y) < 10 * 10) return -128;
+			}
+		}
+
+		// base height
+		return this.sampleContinentBase(continentData, x, y);
+	}
+
 	public static final double BASE_DISTORT_FREQUENCY = 1.0 / 850.0;
 	public static final double BASE_HILLS_FREQUENCY = 1.0 / 300.0;
-
-	// if a continent is gonna be around ~5000 blocks in radius, and we probably only want ~200x200, shift 4
-	// 4096/(2^4) = 256
-	public static final int DIMINISHED_SCALE_SHIFT = 4;
 }
