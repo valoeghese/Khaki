@@ -44,7 +44,7 @@ public class TerrainGenerator {
 	}
 
 	/**
-	 * Calculates the height at a position, excluding rivers.
+	 * Calculates the height at a position, excluding rivers and any local alterations ignored by rivers.
 	 *
 	 * Inputs in block coordinate landscape
 	 * Output in blocks between -128 and 256 and treat sea level = 0 ({@code h < 0 = sea, h >= 0 = land})
@@ -99,18 +99,42 @@ public class TerrainGenerator {
 	}
 
 	public ContinentData pregenerateContinentData(Point centre) {
-		final int minMtnHeight = 140;
-		final int deltaMtnHeight = 255 - minMtnHeight;
-		// IF CHANGING HEIGHT ALGORITHM, REPLACE ALL INSTANCES OF rand.nextInt(deltaMtnHeight) + minMtnHeight
-
 		// random for pregen
 		Random rand = new Random(centre.getValue() + this.seed);
 
+		Point[] mountainRange = this.generateMountainRange(rand, centre);
+
+		return this.generateRivers(new ContinentData(centre, mountainRange, new GridBox<>(GRID_BOX_SIZE, 1 + this.continentDiameter / (2 * GRID_BOX_SIZE))), rand);
+	}
+
+	private final int minMtnHeight = 140;
+	private final int deltaMtnHeight = 255 - minMtnHeight;
+	// IF CHANGING MOUNTAIN HEIGHT ALGORITHM, REPLACE ALL INSTANCES OF rand.nextInt(deltaMtnHeight) + minMtnHeight
+
+	private Point[] generateMountainRange(Random rand, Point centre) {
 		final int nMtns = this.mountainsPerRange;
 
 		Point[] mountainRange = new Point[nMtns];
-		double chainX = (rand.nextDouble() - 0.5) * 0.5 * this.continentDiameter + centre.getX();
-		double chainY = (rand.nextDouble() - 0.5) * 0.5 * this.continentDiameter + centre.getY();
+		// use generateCenteredStartEnd if you want the range centered around the continent centre
+		this.generateMountainStartEnd(rand, centre, mountainRange);
+
+		Point start = mountainRange[0];
+		Point end = mountainRange[nMtns - 1];
+
+		for (int i = 1; i < nMtns - 1; i++) {
+			mountainRange[i] = start.lerp((double) i / (double)(nMtns - 1), end).add(
+					(rand.nextDouble() - 0.5) * 0.05 * this.continentDiameter,
+					(rand.nextDouble() - 0.5) * 0.05 * this.continentDiameter,
+					rand.nextInt(deltaMtnHeight) + minMtnHeight
+			);
+		}
+
+		return mountainRange;
+	}
+
+	private void generateMountainStartEnd(Random rand, Point centre, Point[] mountainRange) {
+		double chainX = (rand.nextDouble() - 0.5) * 0.33 * this.continentDiameter + centre.getX();
+		double chainY = (rand.nextDouble() - 0.5) * 0.33 * this.continentDiameter + centre.getY();
 
 		// each point also carries, as a value, the mountain height.
 		Point start = new Point(chainX, chainY, rand.nextInt(deltaMtnHeight) + minMtnHeight);
@@ -128,8 +152,8 @@ public class TerrainGenerator {
 
 		while (Math.abs(eDX) + Math.abs(eDY) < 0.225 * this.continentDiameter) {
 			//System.out.println("Amplifying Point Spread");
-			eDX *= 2;
-			eDY *= 2;
+			eDX *= 1.3;
+			eDY *= 1.3;
 		}
 
 		Point end = new Point(
@@ -139,22 +163,47 @@ public class TerrainGenerator {
 		);
 
 		mountainRange[0] = start;
-		mountainRange[nMtns - 1] = end;
+		mountainRange[mountainRange.length - 1] = end;
+	}
 
-		for (int i = 1; i < nMtns - 1; i++) {
-			mountainRange[i] = start.lerp((double) i / (double)(nMtns - 1), end).add(
-					(rand.nextDouble() - 0.5) * 0.05 * this.continentDiameter,
-					(rand.nextDouble() - 0.5) * 0.05 * this.continentDiameter,
-					rand.nextInt(deltaMtnHeight) + minMtnHeight
-			);
+	private void generateCenteredStartEnd(Random rand, Point centre, Point[] mountainRange) {
+		// Use same dX and dY algorithm
+		double eDX = (rand.nextDouble() - 0.5) * 0.5 * this.continentDiameter; // endDX
+		double eDY =  (rand.nextDouble() - 0.5) * 0.5 * this.continentDiameter; // endDY
+		//System.out.println((Math.abs(eDX) + Math.abs(eDY)) / this.continentDiameter);
+
+		// inb4 edX and eDy ~= 0 and the game gets stuck in a very big loop
+		// sike let's harcode a fix for that
+		if (Math.abs(eDX) + Math.abs(eDY) < 0.002 * this.continentDiameter) {
+			//System.out.println("Applying emergency EDX offset");
+			eDX += (0.5 + rand.nextDouble()) * 0.3 * this.continentDiameter;
 		}
 
-		return this.generateRivers(new ContinentData(centre, mountainRange, new GridBox<>(GRID_BOX_SIZE, 1 + this.continentDiameter / (2 * GRID_BOX_SIZE))), rand);
+		while (Math.abs(eDX) + Math.abs(eDY) < 0.225 * this.continentDiameter) {
+			//System.out.println("Amplifying Point Spread");
+			eDX *= 1.3;
+			eDY *= 1.3;
+		}
+
+		// treat as diameter
+		eDX /= 2;
+		eDY /= 2;
+
+		mountainRange[0] = new Point(
+				centre.getX() - eDX,
+				centre.getY() - eDX,
+				rand.nextInt(deltaMtnHeight) + minMtnHeight
+		);
+
+		mountainRange[mountainRange.length - 1] = new Point(
+				centre.getX() + eDX,
+				centre.getY() + eDY,
+				rand.nextInt(deltaMtnHeight) + minMtnHeight
+		);
 	}
 
 	private ContinentData generateRivers(ContinentData continentData, Random rand) {
-		final int nRiversToGenerate = 7;
-		List<Point> mtnPositions = new LinkedList<>(Arrays.asList(continentData.mountains()));
+		final int nRiversToGenerate = 10;
 
 		for (int i = 0; i < nRiversToGenerate; i++) {
 			List<Point> river = new ArrayList<>();
@@ -163,25 +212,28 @@ public class TerrainGenerator {
 			// start in the mountains
 			// https://stackoverflow.com/questions/2043783/how-to-efficiently-performance-remove-many-items-from-list-in-java
 			// Linked list structure is better for removing items since it just has to change node connections
-
+			List<Point> mtnPositions = new LinkedList<>(Arrays.asList(continentData.mountains()));
 
 			Point riverNodePos = Maths.tttr(mtnPositions, rand)
-					.lerp(rand.nextDouble() * 0.1 + 0.5, Maths.tttr(mtnPositions, rand));
+					.lerp(rand.nextDouble() * 0.2 + 0.5, Maths.tttr(mtnPositions, rand));
 
-			river.add(riverNodePos);
+			double x = riverNodePos.getX();
+			double y = riverNodePos.getY();
+			// current river height
+			double h = this.sampleContinentBase(continentData, (int) x, (int) y);
+			river.add(riverNodePos.withValue((int) h));
 
 			// the node to merge with, when two rivers combine.
 			Node merge = null;
 			double lastHeight = Double.MAX_VALUE;
 
-			// follow the river path until it hits its lowest point or sea level
-			riverFlow:
-			while (true) {
-				double x = riverNodePos.getX();
-				double y = riverNodePos.getY();
+			// for trying to get unstuck from oscillations between points when in a pit
+			boolean forcedSearchStep = false;
 
-				// current river height
-				double h = this.sampleContinentBase(continentData, (int) x, (int) y);
+			// follow the river path until it hits its lowest point or sea level
+			while (true) {
+				// x, y, and h should all be set to match the latest point in the river by here
+				// they used to be set here, however due to requirements in the algorithm they are set elsewhere in this method
 
 				// leave if in the ocean.
 				// might have to stretch a bit further in the future just in case but she'll be right bro
@@ -189,9 +241,6 @@ public class TerrainGenerator {
 				if (h < 0) {
 					break;
 				}
-
-				// try get unstuck from oscillations between points when in a pit
-				boolean forcedSearchStep = lastHeight < h;
 
 				double riverSearchStep = this.riverStep;
 				int searchSteps = 0;
@@ -225,8 +274,14 @@ public class TerrainGenerator {
 				dx *= normalisationFactor * this.riverStep;
 
 				// next point(s)
+				// cursed solution to get points to consistently be descending even if skipping over/through hills out of a ditch
+				List<Point> nextPoints = new LinkedList();
+				// keep track of this
+				lastHeight = h;
+
+				// Go through adding the X/Y/H positions of nodes. Use the terrain height for now. We will adjust heights later.
+				riverPointAdder:
 				for (int j = 0; j < searchSteps; j++) {
-					//if (j > 5) System.out.println("Searching... " + j);
 					x += dx;
 					y += dy;
 					riverNodePos = new Point(x, y);
@@ -235,18 +290,62 @@ public class TerrainGenerator {
 					// cant be bothered using compute power to search neighbours so cope. if they get close enough across borders I'm sure they'll merge soon after
 					for (Node node : continentData.rivers().get((int) x, (int) y)) {
 						if (Math.abs(node.current().getX() - x) + Math.abs(node.current().getY() - y) <= this.mergeThreshold) {
-							merge = node;
-							river.add(node.current()); // add the node position instead of the close position to the node
-							//System.out.println("merging...");
-							break riverFlow;
+							// It can flow to the node if the node position is lower or equal to the last height it flows from
+							if (node.current().getY() <= (int) lastHeight) {
+								merge = node;
+								nextPoints.add(node.current()); // add the node position instead of the close position to the node
+								System.out.println("merging...");
+								break riverPointAdder;
+							}
 						}
 					}
 
-					river.add(riverNodePos);
+					x = riverNodePos.getX();
+					y = riverNodePos.getY();
+					// current river height
+					h = this.sampleContinentBase(continentData, (int) x, (int) y);
+					nextPoints.add(riverNodePos.withValue((int) h));
 				}
 
-				// keep track of this
-				lastHeight = h;
+				// base this on what was *actually* found.
+				forcedSearchStep = lastHeight < h;
+
+				// ok, now we should check the points are going at least flat, hopefully downstream.
+				// h is the final height of the points to add
+
+				// case 1, the less common case. If it's trying to go uphill, go flat instead.
+				// also do this if it's actually going flat. it's easier
+				if (h >= lastHeight) {
+					for (Point p : nextPoints) {
+						river.add(p.withValue((int) lastHeight));
+					}
+
+					// update the height of the final one.
+					h = lastHeight;
+				}
+				// case 2: it's flowing downstream. make sure the points are *actually* going downstream.
+				// additionally, ensure that it doesn't create a U shape by ensuring it doesn't go below the final point.
+				else {
+					int prevAddedHeight = (int) lastHeight;
+
+					for (Point p : nextPoints) {
+						int nextAddedHeight = p.getValue();
+
+						// if any points go higher than the previous one, make it the same height as previous one
+						if (nextAddedHeight > prevAddedHeight) nextAddedHeight = prevAddedHeight;
+						// if any points go lower than the last one, make it the same height as the last one
+						if (nextAddedHeight < (int) h) nextAddedHeight = (int) h;
+
+						river.add(p.withValue(nextAddedHeight));
+
+						prevAddedHeight = nextAddedHeight;
+					}
+				}
+
+				// if we merged, leave.
+				if (merge != null) {
+					break;
+				}
 
 				// also no.
 				if (river.size() > 10_000) {
@@ -257,12 +356,19 @@ public class TerrainGenerator {
 
 			// convert to nodes
 			// and add to our continent data rivers
-			// todo merge rivers if we get close
 			// todo river width & height values stored
 			Point previous = Point.NONE;
 
 			for (Point point : river) {
-				continentData.rivers().add((int) point.getX(), (int) point.getY(), new Node(previous, point));
+				try {
+					continentData.rivers().add((int) point.getX(), (int) point.getY(), new Node(previous, point));
+				}
+				catch (ArrayIndexOutOfBoundsException e) {
+					this.warn.accept("River went out of bounds of continent grid box! Previous and Offending positions follow:");
+					this.warn.accept(previous.getX() + ", " + previous.getY());
+					this.warn.accept(point.getX() + ", " + point.getY());
+					return continentData;
+				}
 
 				previous = point;
 			}

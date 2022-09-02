@@ -9,17 +9,24 @@ public class Point {
 		this.x = x;
 		this.y = y;
 		this.value = this.hashCode() * 31 + Double.hashCode(this.x);
+		this.defaultValue = true;
 	}
 
 	public Point(double x, double y, int value) {
+		this(x, y, value, false);
+	}
+
+	private Point(double x, double y, int value, boolean dv) {
 		this.x = x;
 		this.y = y;
 		this.value = value;
+		this.defaultValue = dv;
 	}
 
 	private final double x;
 	private final double y;
 	private final int value;
+	private final boolean defaultValue;
 
 	public double getX() {
 		return this.x;
@@ -62,6 +69,14 @@ public class Point {
 				Maths.lerp(progress, this.y, to.y),
 				(int) Maths.lerp(progress, this.value, to.value)
 		);
+	}
+
+	public Point withValue(int value) {
+		return new Point(this.x, this.y, value);
+	}
+
+	public Point withDefaultValue() {
+		return this.defaultValue ? this : new Point(this.x, this.y);
 	}
 
 	public double squaredDist(Point other) {
@@ -115,6 +130,7 @@ public class Point {
 		out.writeDouble(this.x);
 		out.writeDouble(this.y);
 		out.writeInt(this.value);
+		out.writeBoolean(this.defaultValue);
 	}
 
 	/**
@@ -128,7 +144,7 @@ public class Point {
 	}
 
 	public static Point read(DataInput in) throws IOException {
-		return new Point(in.readDouble(), in.readDouble(), in.readInt());
+		return new Point(in.readDouble(), in.readDouble(), in.readInt(), in.readBoolean());
 	}
 
 	public static Point ORIGIN = new Point(0, 0);

@@ -11,6 +11,8 @@ import valoeghese.strom.utils.Point;
 import javax.swing.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +23,10 @@ import java.util.Random;
 public class Main extends PanelTest {
 	public static void main(String[] args) throws Exception {
 		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		long seed = new Random().nextLong();
+		// last seed I had to fix: 2333285187735730582L
+		// 6328360064685290253 is a bit funny ...
+		// last edited merging with: -6731418085665489146
+		long seed = -6731418085665489146L;//new Random().nextLong();
 		System.out.println("Using Seed: " + seed);
 
 		// create worldgen
@@ -80,7 +85,7 @@ public class Main extends PanelTest {
 					}
 				});
 
-		window.start("Khaki 2 / Strom: " + System.currentTimeMillis());
+		window.start("Khaki 2 / Strom: " + seed + " @ " + DateTimeFormatter.ofPattern("dd/MM HH:mm:ss").format(LocalDateTime.now()));
 	}
 
 	private Display display;
