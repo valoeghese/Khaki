@@ -12,8 +12,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -41,8 +41,8 @@ public record ContinentData(Point centre, Point[] mountains, GridBox<Node> river
 			dos.writeInt(rivers.getBoxSize());
 			dos.writeInt(rivers.getSquareRadius());
 
-			for (List<Node>[] column : rivers.toArray()) {
-				for (@Nullable List<Node> entry : column) {
+			for (Set<Node>[] column : rivers.toArray()) {
+				for (@Nullable Set<Node> entry : column) {
 					if (entry == null) {
 						dos.writeInt(0);
 					}
@@ -90,7 +90,7 @@ public record ContinentData(Point centre, Point[] mountains, GridBox<Node> river
 					int size = dis.readInt();
 
 					if (size > 0) {
-						List<Node> riverNodes = new LinkedList<>();
+						Set<Node> riverNodes = new HashSet<>();
 
 						for (int i = 0; i < size; i++) {
 							riverNodes.add(Node.read(dis));

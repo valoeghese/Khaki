@@ -3,7 +3,9 @@ package valoeghese.strom.test.simple;
 import org.jetbrains.annotations.Nullable;
 import valoeghese.strom.utils.GridBox;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 public class GridBoxTest {
 	public static void main(String[] args) {
@@ -17,12 +19,12 @@ public class GridBoxTest {
 
 		System.out.printf("Size is %dx%d\n", box.getWidth(), box.getHeight());
 
-		List<Integer>[][] obj = box.toArray();
+		Set<Integer>[][] obj = box.toArray();
 
 		System.out.println("As Transposed Array: ");
 
-		for (List<Integer>[] column : obj) {
-			for (@Nullable List<Integer> item : column) {
+		for (Set<Integer>[] column : obj) {
+			for (@Nullable Set<Integer> item : column) {
 				System.out.print(item == null ? "n " : (item.size() + " "));
 			}
 

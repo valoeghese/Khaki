@@ -2,11 +2,13 @@ package valoeghese.strom.utils;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
- * A big box made up of a grid of little boxes, which each hold a list of data of a given type.
+ * A big box made up of a grid of little boxes, which each hold a set of data of a given type.
  * @param <T> the type of data stored in each little box.
  */
 public class GridBox<T> {
@@ -16,13 +18,13 @@ public class GridBox<T> {
 	 * @param squareRadius the number of little boxes extended in each cardinal direction to form the big box.
 	 */
 	public GridBox(int boxSize, int squareRadius) {
-		this.boxes = new List[squareRadius * 2][squareRadius * 2];
+		this.boxes = new Set[squareRadius * 2][squareRadius * 2];
 		this.boxSize = boxSize;
 		this.boxShift = squareRadius;
 	}
 
 	private final Iterable<T> empty = List.of();
-	private final List<T>[][] boxes;
+	private final Set<T>[][] boxes;
 	private final int boxSize;
 	private final int boxShift;
 
@@ -77,30 +79,39 @@ public class GridBox<T> {
 		x = (x / boxSize) + this.boxShift;
 		y = (y / boxSize) + this.boxShift;
 
-		if (boxes[x][y] == null) boxes[x][y] = new LinkedList<>();
+		if (boxes[x][y] == null) boxes[x][y] = new HashSet<>();
 		boxes[x][y].add(item);
 	}
 
-	public void put(int gridX, int gridY, List<T> item) throws ArrayIndexOutOfBoundsException {
+	public void put(int gridX, int gridY, Set<T> item) throws ArrayIndexOutOfBoundsException {
 		boxes[gridX][gridY] = item;
 	}
 
 	@Nullable
-	public List<T> remove(int x, int y) throws ArrayIndexOutOfBoundsException {
+	public Collection<T> removeAll(int x, int y) throws ArrayIndexOutOfBoundsException {
 		// convert to grid space
 		x = (x / boxSize) + this.boxShift;
 		y = (y / boxSize) + this.boxShift;
 
-		List<T> original = boxes[x][y];
+		Collection<T> original = boxes[x][y];
 		boxes[x][y] = null;
 		return original;
 	}
 
-	public List<T>[][] toArray() {
-		List<T>[][] result = new List[this.getWidth()][this.getHeight()];
+	public void remove(int x, int y, T item) throws ArrayIndexOutOfBoundsException {
+		// convert to grid space
+		x = (x / boxSize) + this.boxShift;
+		y = (y / boxSize) + this.boxShift;
+
+		@Nullable Set<T> set = boxes[x][y];
+		if (set != null) set.remove(item);
+	}
+
+	public Set<T>[][] toArray() {
+		Set<T>[][] result = new Set[this.getWidth()][this.getHeight()];
 
 		for (int i = 0; i < this.boxes.length; i++) {
-			result[i] = new List[this.getHeight()];
+			result[i] = new Set[this.getHeight()];
 			System.arraycopy(this.boxes[i], 0, result[i], 0, this.getHeight());
 		}
 

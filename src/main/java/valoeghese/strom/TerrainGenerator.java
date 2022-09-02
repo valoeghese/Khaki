@@ -8,6 +8,7 @@ import valoeghese.strom.utils.Voronoi;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -275,7 +276,7 @@ public class TerrainGenerator {
 
 				// next point(s)
 				// cursed solution to get points to consistently be descending even if skipping over/through hills out of a ditch
-				List<Point> nextPoints = new LinkedList();
+				List<Point> nextPoints = new LinkedList<>();
 				// keep track of this
 				lastHeight = h;
 
@@ -286,16 +287,57 @@ public class TerrainGenerator {
 					y += dy;
 					riverNodePos = new Point(x, y);
 
+					// keep track of any other rivers that need to be redirected
+					List<Node> nodesToRedirect = new ArrayList<>();
+
 					// check for nodes to merge with in this gridbox
 					// cant be bothered using compute power to search neighbours so cope. if they get close enough across borders I'm sure they'll merge soon after
-					for (Node node : continentData.rivers().get((int) x, (int) y)) {
+					// remaining nearby nodes to search
+
+					// clone it into a linked list so can concurrently modify the data while iterating
+					LinkedList<Node> nearbyNodes = new LinkedList<>((Collection<Node>) continentData.rivers().get((int) x, (int) y));
+
+					while (nearbyNodes.size() > 0) {
+						Node node = nearbyNodes.removeFirst();
+
 						if (Math.abs(node.current().getX() - x) + Math.abs(node.current().getY() - y) <= this.mergeThreshold) {
 							// It can flow to the node if the node position is lower or equal to the last height it flows from
-							if (node.current().getY() <= (int) lastHeight) {
+							if (node.current().getValue() <= (int) lastHeight) {
+								System.out.println("merging...");
 								merge = node;
 								nextPoints.add(node.current()); // add the node position instead of the close position to the node
-								System.out.println("merging...");
+
+								// redirect
+								for (Node redirectMeDaddy : nodesToRedirect) {
+									// from the river to redirect,
+									continentData.rivers().add(
+											(int) node.current().getX(),
+											(int) node.current().getY(),
+											new Node(
+													redirectMeDaddy.previous(),
+													node.current()
+											)
+									);
+								}
 								break riverPointAdder;
+							}
+							// Else, get the node to flow to *it* (and destroy the original river)
+							// Only if they're close enough though (20 blocks)
+							else if (node.current().getValue() - 30 <= (int) lastHeight) {
+								System.out.println("redirecting...");
+
+								// recursively delete children of the node
+								Node deleteMeDaddy = node;
+								do {
+									continentData.rivers().remove((int) deleteMeDaddy.current().getX(), (int) deleteMeDaddy.current().getY(), deleteMeDaddy);
+									// don't iterate over this in future either, in case we haven't got to you
+									nearbyNodes.remove(deleteMeDaddy);
+								} while ((deleteMeDaddy = deleteMeDaddy.next) != null);
+
+								// reimplement node
+								// don't implement it just yet in case it redirects somewhere else tho
+								// e.g. this pt cld be between a higher and lower river which by themselves are not close at all
+								nodesToRedirect.add(node);
 							}
 						}
 					}
@@ -305,6 +347,19 @@ public class TerrainGenerator {
 					// current river height
 					h = this.sampleContinentBase(continentData, (int) x, (int) y);
 					nextPoints.add(riverNodePos.withValue((int) h));
+
+					// redirect
+					for (Node redirectMeDaddy : nodesToRedirect) {
+						// from the river to redirect,
+						continentData.rivers().add(
+								(int) x,
+								(int) y,
+								new Node(
+										redirectMeDaddy.previous(),
+										riverNodePos
+								)
+						);
+					}
 				}
 
 				// base this on what was *actually* found.
@@ -356,12 +411,17 @@ public class TerrainGenerator {
 
 			// convert to nodes
 			// and add to our continent data rivers
-			// todo river width & height values stored
+			// todo river width values stored
 			Point previous = Point.NONE;
+			Node previousNode = DUMMY_NODE; // micro-op. no if statements ;)
 
 			for (Point point : river) {
 				try {
-					continentData.rivers().add((int) point.getX(), (int) point.getY(), new Node(previous, point));
+					Node node = new Node(previous, point);
+					previousNode.next = node; // store in case this river needs to be redirected
+					continentData.rivers().add((int) point.getX(), (int) point.getY(), node);
+
+					previousNode = node;
 				}
 				catch (ArrayIndexOutOfBoundsException e) {
 					this.warn.accept("River went out of bounds of continent grid box! Previous and Offending positions follow:");
@@ -477,6 +537,7 @@ public class TerrainGenerator {
 		return this.sampleContinentBase(continentData, x, y);
 	}
 
+	private static final Node DUMMY_NODE = new Node(Point.NONE, Point.NONE);
 	public static final double BASE_DISTORT_FREQUENCY = 1.0 / 850.0;
 	public static final double BASE_HILLS_FREQUENCY = 1.0 / 300.0;
 	public static final int GRID_BOX_SIZE = 64;
