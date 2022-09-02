@@ -303,7 +303,7 @@ public class TerrainGenerator {
 						if (Math.abs(node.current().getX() - x) + Math.abs(node.current().getY() - y) <= this.mergeThreshold) {
 							// It can flow to the node if the node position is lower or equal to the last height it flows from
 							if (node.current().getValue() <= (int) lastHeight) {
-								System.out.println("merging...");
+								//System.out.println("merging...");
 								merge = node;
 								nextPoints.add(node.current()); // add the node position instead of the close position to the node
 
@@ -324,7 +324,7 @@ public class TerrainGenerator {
 							// Else, get the node to flow to *it* (and destroy the original river)
 							// Only if they're close enough though (20 blocks)
 							else if (node.current().getValue() - 30 <= (int) lastHeight) {
-								System.out.println("redirecting...");
+								//System.out.println("redirecting...");
 
 								// recursively delete children of the node
 								Node deleteMeDaddy = node;
@@ -409,6 +409,9 @@ public class TerrainGenerator {
 				}
 			}
 
+			// todo, what if a point is filtered out that another node depends on?
+			river = this.smoothRiverPoints(river);
+
 			// convert to nodes
 			// and add to our continent data rivers
 			// todo river width values stored
@@ -422,8 +425,7 @@ public class TerrainGenerator {
 					continentData.rivers().add((int) point.getX(), (int) point.getY(), node);
 
 					previousNode = node;
-				}
-				catch (ArrayIndexOutOfBoundsException e) {
+				} catch (ArrayIndexOutOfBoundsException e) {
 					this.warn.accept("River went out of bounds of continent grid box! Previous and Offending positions follow:");
 					this.warn.accept(previous.getX() + ", " + previous.getY());
 					this.warn.accept(point.getX() + ", " + point.getY());
@@ -437,6 +439,40 @@ public class TerrainGenerator {
 		return continentData;
 	}
 
+	public List<Point> smoothRiverPoints(List<Point> points) {
+		// test for points that should be smoothed to iron out formations like zigzags and twirls while it searches for a way out
+		// this is the slowest way to do it. TODO: don't be slow. don't check the entire river path.
+		// this itself is like 1/3 of the time spent pregenerating
+		// This could probably be made a crap ton easier through doing it via node redirection instead
+		final double riverSmoothConstant = 1;
+
+		final double riverSmoothRad = riverSmoothConstant * this.riverStep;
+
+		// max size is points.size(), so preallocate that
+		List<Point> seen = new ArrayList<>(points.size());
+
+		// go through, copying points in...
+		for (Point pNew : points) {
+
+			// look through all but the previous point to be added
+			for (int i = 0; i < seen.size() - 1; i++) {
+				Point pSeen = seen.get(i);
+
+				// if new is close to a seen point to where it should have been connected, redirect the river to connect to it
+				// this is our "smooth" operation
+				if (pNew.squaredDist(pSeen) <= riverSmoothRad * riverSmoothRad) {
+					// cut off anything after pSeen and redirect the flow
+					//System.out.println("Smoothing...");
+					seen = seen.subList(0, i + 1); // + 1 because upper bound is exclusive. include the seen point that new should connect to.
+					break;
+				}
+			}
+
+			seen.add(pNew);
+		}
+
+		return seen;
+	}
 	// inputs in chunk landscape
 	public int _testVoronoiPoints(int x, int y, boolean raw, boolean innerLines) {
 		final int chunkScaleShift = 4;
@@ -528,7 +564,7 @@ public class TerrainGenerator {
 		for (int gxo = -1; gxo <= 1; gxo++) {
 			for (int gyo = -1; gyo <= 1; gyo++) {
 				for (Node node : continentData.rivers().getGridBox(gridX + gxo, gridY + gyo)) {
-					if (node.current().squaredDist(x, y) < 10 * 10) return -128;
+					if (node.current().squaredDist(x, y) < 8 * 8) return -128;
 				}
 			}
 		}
