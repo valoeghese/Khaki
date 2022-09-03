@@ -1,15 +1,15 @@
 package valoeghese.strom.utils;
 
-// heavily cached because lloyd relaxation is very intensive lmao
+// heavily cached because spread relaxation is very intensive lmao
 // the way I do it at least
 // i should probably write an optimised version of this that just creates double arrays rather than resampling each time
-public class LloydVoronoi {
-	// lloyd relaxation voronoi
-	public LloydVoronoi(long seed, double relaxation) {
+public class SpreadRelaxationVoronoi {
+	// spread relaxation voronoi
+	public SpreadRelaxationVoronoi(long seed, double relaxation) {
 		this.seed = seed;
 		this.relaxation = relaxation;
 
-		// how many iterations of lloyd do you want?
+		// how many iterations of spread do you want?
 		// yes
 		this.crutch2 = new SimpleCache(512, (gridX, gridY) -> {
 			double vxy[] = this.crutch.sample(gridX, gridY);
@@ -18,8 +18,7 @@ public class LloydVoronoi {
 				double vx = vxy[0];
 				double vy = vxy[1];
 
-				// lloyd relaxation
-				// im not following the algorithm strictly but imma call it that it's close enough
+				// spread relaxation
 
 				// store originals
 				final double originalVx = vx;
@@ -52,8 +51,7 @@ public class LloydVoronoi {
 				double vx = vxy[0];
 				double vy = vxy[1];
 
-				// lloyd relaxation
-				// im not following the algorithm strictly but imma call it that it's close enough
+				// spread relaxation
 
 				// store originals
 				final double originalVx = vx;
@@ -86,8 +84,7 @@ public class LloydVoronoi {
 				double vx = vxy[0];
 				double vy = vxy[1];
 
-				// lloyd relaxation
-				// im not following the algorithm strictly but imma call it that it's close enough
+				// spread relaxation
 
 				// store originals
 				final double originalVx = vx;
@@ -132,7 +129,7 @@ public class LloydVoronoi {
 	private final SimpleCache<double[]> crutch3;
 	private final SimpleCache<double[]> crutch4;
 
-	// centred lloyd
+	// centred spread
 	public Point sampleC(double x, double y) {
 		final int baseX = (int) Math.floor(x);
 		final int baseY = (int) Math.floor(y);

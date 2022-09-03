@@ -3,8 +3,6 @@ package valoeghese.strom.test.simple;
 import org.jetbrains.annotations.Nullable;
 import valoeghese.strom.utils.GridBox;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 public class GridBoxTest {
@@ -19,9 +17,36 @@ public class GridBoxTest {
 
 		System.out.printf("Size is %dx%d\n", box.getWidth(), box.getHeight());
 
+		System.out.println("Original (Pre-Frame) As Transposed Array: ");
 		Set<Integer>[][] obj = box.toArray();
 
-		System.out.println("As Transposed Array: ");
+		for (Set<Integer>[] column : obj) {
+			for (@Nullable Set<Integer> item : column) {
+				System.out.print(item == null ? "n " : (item.size() + " "));
+			}
+
+			System.out.println();
+		}
+
+		System.out.println("Creating GridBox Frame & adding 2 values");
+
+		GridBox<Integer> frame = box.createFrame();
+		frame.add(-4, 7, 420);
+		frame.add(-14, 7, 21);
+
+		System.out.println("Frame As Transposed Array: ");
+		obj = frame.toArray();
+
+		for (Set<Integer>[] column : obj) {
+			for (@Nullable Set<Integer> item : column) {
+				System.out.print(item == null ? "n " : (item.size() + " "));
+			}
+
+			System.out.println();
+		}
+
+		System.out.println("Original (Post-Frame) As Transposed Array: ");
+		obj = box.toArray();
 
 		for (Set<Integer>[] column : obj) {
 			for (@Nullable Set<Integer> item : column) {

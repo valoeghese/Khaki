@@ -31,3 +31,7 @@ Thumbs.db
 .DS_Store
 local.properties
 .directory
+
+# No.
+*.tmp
+*.docx
