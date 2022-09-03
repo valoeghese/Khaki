@@ -83,8 +83,8 @@ public class GridBox<T> {
 		boxes[x][y].add(item);
 	}
 
-	public void put(int gridX, int gridY, Set<T> item) throws ArrayIndexOutOfBoundsException {
-		boxes[gridX][gridY] = item;
+	public void put(int gridX, int gridY, Set<T> items) throws ArrayIndexOutOfBoundsException {
+		boxes[gridX][gridY] = items;
 	}
 
 	@Nullable
@@ -108,6 +108,7 @@ public class GridBox<T> {
 	}
 
 	public Set<T>[][] toArray() {
+		// deep copy
 		Set<T>[][] result = new Set[this.getWidth()][this.getHeight()];
 
 		for (int i = 0; i < this.boxes.length; i++) {
@@ -116,5 +117,52 @@ public class GridBox<T> {
 		}
 
 		return result;
+	}
+
+	/**
+	 * Constructs a frame for this grid box. All add/remove operations on the frame affect the parent grid box.
+	 * However, operations merely retrieving data, namely get and toArray, only affect elements added to this frame.
+	 *
+	 * @return a frame of this grid box.
+	 * @apiNote yes, you can make a frame of a frame.
+	 */
+	public GridBox<T> createFrame() {
+		return new Frame();
+	}
+
+	/**
+	 * A frame of a grid box.
+	 * All add/remove operations on this frame affect the parent gridbox, however get and toArray only affect elements added to this frame.
+	 *
+	 * Yes you can make a frame of a frame.
+	 */
+	private class Frame extends GridBox<T> {
+		private Frame() {
+			super(GridBox.this.getBoxSize(), GridBox.this.getSquareRadius());
+		}
+
+		@Override
+		public void add(int x, int y, T item) throws ArrayIndexOutOfBoundsException {
+			GridBox.this.add(x, y, item);
+			super.add(x, y, item);
+		}
+
+		@Override
+		public void put(int gridX, int gridY, Set<T> items) throws ArrayIndexOutOfBoundsException {
+			GridBox.this.put(gridX, gridY, items);
+			super.put(gridX, gridY, items);
+		}
+
+		@Override
+		public void remove(int x, int y, T item) throws ArrayIndexOutOfBoundsException {
+			GridBox.this.remove(x, y, item);
+			super.remove(x, y, item);
+		}
+
+		@Override
+		public @Nullable Collection<T> removeAll(int x, int y) throws ArrayIndexOutOfBoundsException {
+			GridBox.this.removeAll(x, y);
+			return super.removeAll(x, y);
+		}
 	}
 }
