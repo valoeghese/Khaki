@@ -221,7 +221,7 @@ public class TerrainGenerator {
 			double y = riverNodePos.getY();
 			// current river height
 			double h = this.sampleContinentBase(continentData, (int) x, (int) y);
-			river.add(riverNodePos.withValue((int) h));
+			river.add(riverNodePos.withHeight(h));
 
 			// the node to merge with, when two rivers combine.
 			Node merge = null;
@@ -301,11 +301,13 @@ public class TerrainGenerator {
 
 						if (Math.abs(node.current().getX() - x) + Math.abs(node.current().getY() - y) <= this.mergeThreshold) {
 							// It can flow to the node if the node position is lower or equal to the last height it flows from
-							if ((int) node.current().getHeight() <= (int) lastHeight) {
+							if (node.current().getHeight() <= lastHeight) {
 								//System.out.println("merging...");
 								merge = node;
 								nextPoints.add(node.current()); // add the node position instead of the close position to the node
 
+								// FIXME nodes are redirecting into this node then having it merged into another node on the same path
+								//System.out.println(nodesToRedirect.size());
 								// redirect
 								for (Node redirectMeDaddy : nodesToRedirect) {
 									// from the river to redirect,
@@ -322,8 +324,8 @@ public class TerrainGenerator {
 							}
 							// Else, get the node to flow to *it* (and destroy the original river)
 							// Only if they're close enough though (20 blocks)
-							else if ((int) node.current().getHeight() - 30 <= (int) lastHeight) {
-								//System.out.println("redirecting...");
+							else if (node.current().getHeight() - 30 <= lastHeight) {
+								System.out.println("redirecting...");
 
 								// recursively delete children of the node
 								Node deleteMeDaddy = node;
@@ -347,7 +349,7 @@ public class TerrainGenerator {
 					y = riverNodePos.getY();
 					// current river height
 					h = this.sampleContinentBase(continentData, (int) x, (int) y);
-					nextPoints.add(riverNodePos.withValue((int) h));
+					nextPoints.add(riverNodePos.withHeight(h));
 
 					// redirect
 					for (Node redirectMeDaddy : nodesToRedirect) {
@@ -373,7 +375,7 @@ public class TerrainGenerator {
 				// also do this if it's actually going flat. it's easier
 				if (h >= lastHeight) {
 					for (Point p : nextPoints) {
-						river.add(p.withValue((int) lastHeight));
+						river.add(p.withHeight(lastHeight));
 					}
 
 					// update the height of the final one.
@@ -392,7 +394,7 @@ public class TerrainGenerator {
 						// if any points go lower than the last one, make it the same height as the last one
 						if (nextAddedHeight < (int) h) nextAddedHeight = (int) h;
 
-						river.add(p.withValue(nextAddedHeight));
+						river.add(p.withHeight(nextAddedHeight));
 
 						prevAddedHeight = nextAddedHeight;
 					}
@@ -446,7 +448,7 @@ public class TerrainGenerator {
 		return continentData;
 	}
 
-	public Node smoothRiverNodes(GridBox<Node> frame, Node newNode) {
+	private Node smoothRiverNodes(GridBox<Node> frame, Node newNode) {
 		// test for points that should be smoothed to iron out formations like zigzags and twirls while it searches for a way out
 		// this is probably a faster way of doing it than smoothRiverPoints
 
@@ -497,7 +499,7 @@ public class TerrainGenerator {
 	// OLD WAY OF DOING IT
 	// DONT USE IT
 	// HERE FOR COMPARISON AND REFERENCE PURPOSES
-	public List<Point> smoothRiverPoints(List<Point> points) {
+	private List<Point> smoothRiverPoints(List<Point> points) {
 		// test for points that should be smoothed to iron out formations like zigzags and twirls while it searches for a way out
 		// this is the slowest way to do it. don't be slow. don't check the entire river path.
 		// this itself is like 1/3 of the time spent pregenerating

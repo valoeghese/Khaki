@@ -79,8 +79,16 @@ public class Point {
 		);
 	}
 
-	public Point withValue(int value) {
-		return new Point(this.x, this.y, value);
+	public Point withHeight(double height) {
+		return new Point(this.x, this.y, height, this.flags);
+	}
+
+	public Point markImportant() {
+		return new Point(this.x, this.y, this.height, this.flags | 0x1);
+	}
+
+	public boolean isImportant() {
+		return (this.flags & 0x1) == 0x1;
 	}
 
 	public double squaredDist(Point other) {
