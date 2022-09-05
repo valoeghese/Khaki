@@ -21,11 +21,18 @@ public class Node {
 		this.current = current;
 	}
 
+	public Node(Point previous, Point current, int river) {
+		this.previous = previous;
+		this.current = current;
+		this.river = river;
+	}
+
 	private final Point previous;
 	private final Point current;
 	// not saved, not used anywhere except shortly after assigned, in case a river is required to be redirected.
 	@Nullable
 	public transient Node next;
+	public transient int river;
 
 	public void write(DataOutput out) throws IOException {
 		previous.write(out);

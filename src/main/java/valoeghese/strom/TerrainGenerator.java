@@ -8,9 +8,11 @@ import valoeghese.strom.utils.Voronoi;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public class TerrainGenerator {
@@ -230,6 +232,10 @@ public class TerrainGenerator {
 			// for trying to get unstuck from oscillations between points when in a pit
 			boolean forcedSearchStep = false;
 
+			// set of rivers redirected
+			// to prevent merging into a river which has been redirected into this one
+			Set<Integer> redirectedRivers = new HashSet<>();
+
 			// follow the river path until it hits its lowest point or sea level
 			while (true) {
 				// x, y, and h should all be set to match the latest point in the river by here
@@ -302,25 +308,27 @@ public class TerrainGenerator {
 						if (Math.abs(node.current().getX() - x) + Math.abs(node.current().getY() - y) <= this.mergeThreshold) {
 							// It can flow to the node if the node position is lower or equal to the last height it flows from
 							if (node.current().getHeight() <= lastHeight) {
-								//System.out.println("merging...");
-								merge = node;
-								nextPoints.add(node.current()); // add the node position instead of the close position to the node
-
-								// FIXME nodes are redirecting into this node then having it merged into another node on the same path
-								//System.out.println(nodesToRedirect.size());
-								// redirect
-								for (Node redirectMeDaddy : nodesToRedirect) {
-									// from the river to redirect,
-									continentData.rivers().add(
-											(int) node.current().getX(),
-											(int) node.current().getY(),
-											new Node(
-													redirectMeDaddy.previous(),
-													node.current()
-											)
-									);
+								if (!redirectedRivers.contains(node.river)) {
+									//System.out.println("merging...");
+									merge = node;
+									nextPoints.add(node.current()); // add the node position instead of the close position to the node
+									
+									//System.out.println(nodesToRedirect.size());
+									// redirect
+									for (Node redirectMeDaddy : nodesToRedirect) {
+										// from the river to redirect,
+										continentData.rivers().add(
+												(int) node.current().getX(),
+												(int) node.current().getY(),
+												new Node(
+														redirectMeDaddy.previous(),
+														node.current(),
+														redirectMeDaddy.river
+												)
+										);
+									}
+									break riverPointAdder;
 								}
-								break riverPointAdder;
 							}
 							// Else, get the node to flow to *it* (and destroy the original river)
 							// Only if they're close enough though (20 blocks)
@@ -339,6 +347,8 @@ public class TerrainGenerator {
 								// don't implement it just yet in case it redirects somewhere else tho
 								// e.g. this pt cld be between a higher and lower river which by themselves are not close at all
 								nodesToRedirect.add(node);
+								// don't merge into this river
+								redirectedRivers.add(node.river);
 							}
 						}
 					}
@@ -359,7 +369,8 @@ public class TerrainGenerator {
 								(int) y,
 								new Node(
 										redirectMeDaddy.previous(),
-										riverNodePos
+										riverNodePos,
+										redirectMeDaddy.river
 								)
 						);
 					}
@@ -419,7 +430,7 @@ public class TerrainGenerator {
 			// and add to our continent data rivers
 			// todo river width values stored
 			Point previous = Point.NONE;
-			Node previousNode = DUMMY_NODE; // micro-op. no if statements ;)
+			Node previousNode = DUMMY_NODE; // micro-optimisation. no if statements ;)
 
 			// Smooth River Points while adding
 			// First create a frame so we can see which points are added from this river.
@@ -427,7 +438,7 @@ public class TerrainGenerator {
 
 			for (Point point : river) {
 				try {
-					Node node = new Node(previous, point);
+					Node node = new Node(previous, point, i);
 					node = this.smoothRiverNodes(frame, node);
 
 					previousNode.next = node; // store in case this river needs to be redirected
