@@ -1,5 +1,6 @@
 package valoeghese.strom;
 
+import org.jetbrains.annotations.Nullable;
 import valoeghese.strom.utils.Point;
 
 import java.io.DataInput;
@@ -10,7 +11,7 @@ import java.util.Objects;
 /**
  * A node in the river generator for interpolation between two points.
  */
-public final class Node {
+public class Node {
 	/**
 	 * @param previous the previous point which this node connects to, can be NONE.
 	 * @param current the next point which this node connects to, cannot be NONE.
@@ -23,6 +24,7 @@ public final class Node {
 	private final Point previous;
 	private final Point current;
 	// not saved, not used anywhere except shortly after assigned, in case a river is required to be redirected.
+	@Nullable
 	public transient Node next;
 
 	public void write(DataOutput out) throws IOException {

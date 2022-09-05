@@ -8,25 +8,28 @@ public class Point {
 	public Point(double x, double y) {
 		this.x = x;
 		this.y = y;
-		this.value = this.hashCode() * 31 + Double.hashCode(this.x);
-		this.defaultValue = true;
+		this.height = 0;
+		this.flags = 0;
 	}
 
-	public Point(double x, double y, int value) {
-		this(x, y, value, false);
-	}
-
-	private Point(double x, double y, int value, boolean dv) {
+	public Point(double x, double y, double height) {
 		this.x = x;
 		this.y = y;
-		this.value = value;
-		this.defaultValue = dv;
+		this.height = height;
+		this.flags = 0;
+	}
+
+	public Point(double x, double y, double height, int flags) {
+		this.x = x;
+		this.y = y;
+		this.height = height;
+		this.flags = flags;
 	}
 
 	private final double x;
 	private final double y;
-	private final int value;
-	private final boolean defaultValue;
+	private final double height;
+	private final int flags;
 
 	public double getX() {
 		return this.x;
@@ -36,8 +39,12 @@ public class Point {
 		return this.y;
 	}
 
-	public int getValue() {
-		return this.value;
+	public double getHeight() {
+		return this.height;
+	}
+
+	public int getFlags() {
+		return this.flags;
 	}
 
 	public Point add(double x, double y) {
@@ -53,7 +60,7 @@ public class Point {
 	}
 
 	public Point mul(double by) {
-		return new Point(this.x * by, this.y * by, this.value);
+		return new Point(this.x * by, this.y * by, this.height, this.flags);
 	}
 
 	public Point lerp(double progress, Point to) {
@@ -63,20 +70,17 @@ public class Point {
 		);
 	}
 
-	public Point lerpv(double progress, Point to) {
+	public Point lerph(double progress, Point to) {
 		return new Point(
 				Maths.lerp(progress, this.x, to.x),
 				Maths.lerp(progress, this.y, to.y),
-				(int) Maths.lerp(progress, this.value, to.value)
+				Maths.lerp(progress, this.height, to.height),
+				0
 		);
 	}
 
 	public Point withValue(int value) {
 		return new Point(this.x, this.y, value);
-	}
-
-	public Point withDefaultValue() {
-		return this.defaultValue ? this : new Point(this.x, this.y);
 	}
 
 	public double squaredDist(Point other) {
@@ -116,6 +120,7 @@ public class Point {
 		int result = 7;
 		result = 31 * result + Double.hashCode(this.x);
 		result = 31 * result + Double.hashCode(this.y);
+		result = 31 * result + Double.hashCode(this.x);
 		return result;
 	}
 
@@ -129,8 +134,8 @@ public class Point {
 	public void write(DataOutput out) throws IOException {
 		out.writeDouble(this.x);
 		out.writeDouble(this.y);
-		out.writeInt(this.value);
-		out.writeBoolean(this.defaultValue);
+		out.writeDouble(this.height);
+		out.writeInt(this.flags);
 	}
 
 	/**
@@ -144,7 +149,7 @@ public class Point {
 	}
 
 	public static Point read(DataInput in) throws IOException {
-		return new Point(in.readDouble(), in.readDouble(), in.readInt(), in.readBoolean());
+		return new Point(in.readDouble(), in.readDouble(), in.readDouble(), in.readInt());
 	}
 
 	public static Point ORIGIN = new Point(0, 0);

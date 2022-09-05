@@ -8,7 +8,6 @@ import valoeghese.strom.utils.Voronoi;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -89,7 +88,7 @@ public class TerrainGenerator {
 			}
 
 			// weight sum & add weighted height for weighted average blending
-			weightedMtnHeight += mtnStrength * p.getValue();
+			weightedMtnHeight += mtnStrength * p.getHeight();
 			weightsSum += mtnStrength;
 		}
 
@@ -101,7 +100,7 @@ public class TerrainGenerator {
 
 	public ContinentData pregenerateContinentData(Point centre) {
 		// random for pregen
-		Random rand = new Random(centre.getValue() + this.seed);
+		Random rand = new Random(centre.hashCode() + this.seed);
 
 		Point[] mountainRange = this.generateMountainRange(rand, centre);
 
@@ -295,14 +294,14 @@ public class TerrainGenerator {
 					// remaining nearby nodes to search
 
 					// clone it into a linked list so can concurrently modify the data while iterating
-					LinkedList<Node> nearbyNodes = new LinkedList<>((Collection<Node>) continentData.rivers().get((int) x, (int) y));
+					LinkedList<Node> nearbyNodes = new LinkedList<>(continentData.rivers().get((int) x, (int) y));
 
 					while (nearbyNodes.size() > 0) {
 						Node node = nearbyNodes.removeFirst();
 
 						if (Math.abs(node.current().getX() - x) + Math.abs(node.current().getY() - y) <= this.mergeThreshold) {
 							// It can flow to the node if the node position is lower or equal to the last height it flows from
-							if (node.current().getValue() <= (int) lastHeight) {
+							if ((int) node.current().getHeight() <= (int) lastHeight) {
 								//System.out.println("merging...");
 								merge = node;
 								nextPoints.add(node.current()); // add the node position instead of the close position to the node
@@ -323,7 +322,7 @@ public class TerrainGenerator {
 							}
 							// Else, get the node to flow to *it* (and destroy the original river)
 							// Only if they're close enough though (20 blocks)
-							else if (node.current().getValue() - 30 <= (int) lastHeight) {
+							else if ((int) node.current().getHeight() - 30 <= (int) lastHeight) {
 								//System.out.println("redirecting...");
 
 								// recursively delete children of the node
@@ -341,6 +340,8 @@ public class TerrainGenerator {
 							}
 						}
 					}
+
+					// Note that redirections are all to the current node.
 
 					x = riverNodePos.getX();
 					y = riverNodePos.getY();
@@ -384,7 +385,7 @@ public class TerrainGenerator {
 					int prevAddedHeight = (int) lastHeight;
 
 					for (Point p : nextPoints) {
-						int nextAddedHeight = p.getValue();
+						int nextAddedHeight = (int) p.getHeight();
 
 						// if any points go higher than the previous one, make it the same height as previous one
 						if (nextAddedHeight > prevAddedHeight) nextAddedHeight = prevAddedHeight;
@@ -410,7 +411,7 @@ public class TerrainGenerator {
 			}
 
 			// todo, what if a point is filtered out that another node depends on?
-			river = this.smoothRiverPoints(river);
+			//river = this.smoothRiverPoints(river);
 
 			// convert to nodes
 			// and add to our continent data rivers
@@ -418,11 +419,17 @@ public class TerrainGenerator {
 			Point previous = Point.NONE;
 			Node previousNode = DUMMY_NODE; // micro-op. no if statements ;)
 
+			// Smooth River Points while adding
+			// First create a frame so we can see which points are added from this river.
+			GridBox<Node> frame = continentData.rivers().createFrame();
+
 			for (Point point : river) {
 				try {
 					Node node = new Node(previous, point);
+					node = this.smoothRiverNodes(frame, node);
+
 					previousNode.next = node; // store in case this river needs to be redirected
-					continentData.rivers().add((int) point.getX(), (int) point.getY(), node);
+					frame.add((int) point.getX(), (int) point.getY(), node);
 
 					previousNode = node;
 				} catch (ArrayIndexOutOfBoundsException e) {
@@ -439,9 +446,60 @@ public class TerrainGenerator {
 		return continentData;
 	}
 
+	public Node smoothRiverNodes(GridBox<Node> frame, Node newNode) {
+		// test for points that should be smoothed to iron out formations like zigzags and twirls while it searches for a way out
+		// this is probably a faster way of doing it than smoothRiverPoints
+
+		// ================== WARNING ========================
+		// >>> This method assumes the node before the one about to be added has NULL as the next node <<<
+		// If that behaviour changes, the code for this method must be updated
+
+		final double riverSmoothConstant = 1;
+		final double riverSmoothRad = riverSmoothConstant * this.riverStep;
+
+		Point newPoint = newNode.current();
+		int gridX = frame.gridSpace((int) newPoint.getX());
+		int gridY = frame.gridSpace((int) newPoint.getY());
+
+		// look in neighbouring cells
+		for (int xo = -1; xo <= 1; xo++) {
+			for (int yo = -1; yo <= 1; yo++) {
+				// make a copy so as not to have a concurrent modification exception
+				Iterable<Node> nodes = new ArrayList<>(frame.getGridBox(gridX + xo, gridY + yo));
+
+				for (Node n : nodes) {
+					// ignore points that have since been removed
+					if (!frame.containsInGridBox(gridX + xo, gridY + yo, n)) continue;
+
+					Point existingPoint = n.current();
+
+					// don't bother smoothing if it's just the previous node in the series
+					// otherwise, if it's close enough to redirect, just do it
+					if (n.next != null && newPoint.squaredDist(existingPoint) <= riverSmoothRad * riverSmoothRad) {
+						// remove points up until the new node (or a required node for a merge)
+						Node removeMe = n;
+
+						while ((removeMe = removeMe.next) != null) {
+							frame.remove((int) removeMe.current().getX(), (int) removeMe.current().getY(), removeMe);
+						};
+
+						// substitute the next node to be added with a "summary" node, going from prev of the first removed node to current
+						// that way the river still flows consistently
+						newNode = new Node(n.current(), newPoint);
+					}
+				}
+			}
+		}
+
+		return newNode;
+	}
+
+	// OLD WAY OF DOING IT
+	// DONT USE IT
+	// HERE FOR COMPARISON AND REFERENCE PURPOSES
 	public List<Point> smoothRiverPoints(List<Point> points) {
 		// test for points that should be smoothed to iron out formations like zigzags and twirls while it searches for a way out
-		// this is the slowest way to do it. TODO: don't be slow. don't check the entire river path.
+		// this is the slowest way to do it. don't be slow. don't check the entire river path.
 		// this itself is like 1/3 of the time spent pregenerating
 		// This could probably be made a crap ton easier through doing it via node redirection instead
 		final double riverSmoothConstant = 1;
@@ -454,7 +512,7 @@ public class TerrainGenerator {
 		// go through, copying points in...
 		for (Point pNew : points) {
 
-			// look through all but the previous point to be added
+			// look through all but the previous point to be added when checking if they're too close
 			for (int i = 0; i < seen.size() - 1; i++) {
 				Point pSeen = seen.get(i);
 
@@ -501,8 +559,8 @@ public class TerrainGenerator {
 
 		// raw, just use voronoi colours
 		if (raw) {
-			int value = point.getValue();
-			boolean origin = (value == Point.ORIGIN.getValue() && (int) voronoiX == 0 && (int) voronoiY == 0);
+			int value = point.hashCode();
+			boolean origin = (value == Point.ORIGIN.hashCode() && (int) voronoiX == 0 && (int) voronoiY == 0);
 			return point.squaredDist(x, y) < cDimDiameter ? (origin ? Maths.rgb(255, 0, 0) : 0) : value;
 		}
 

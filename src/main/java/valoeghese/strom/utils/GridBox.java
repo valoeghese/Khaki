@@ -23,7 +23,7 @@ public class GridBox<T> {
 		this.boxShift = squareRadius;
 	}
 
-	private final Iterable<T> empty = List.of();
+	private final Collection<T> empty = List.of();
 	private final Set<T>[][] boxes;
 	private final int boxSize;
 	private final int boxShift;
@@ -45,13 +45,13 @@ public class GridBox<T> {
 	}
 
 	// if you use this to modify the data you are cringe
-	public Iterable<T> get(int x, int y) {
+	public Collection<T> get(int x, int y) {
 		// convert to grid space
 		x = (x / boxSize) + this.boxShift;
 		y = (y / boxSize) + this.boxShift;
 
 		try {
-			Iterable<T> r = boxes[x][y];
+			Collection<T> r = boxes[x][y];
 			return r == null ? this.empty : r;
 		}
 		catch (ArrayIndexOutOfBoundsException e) {
@@ -60,9 +60,9 @@ public class GridBox<T> {
 	}
 
 	// if you use this to modify the data you are cringe
-	public Iterable<T> getGridBox(int gridX, int gridY) {
+	public Collection<T> getGridBox(int gridX, int gridY) {
 		try {
-			Iterable<T> r = boxes[gridX][gridY];
+			Collection<T> r = boxes[gridX][gridY];
 			return r == null ? this.empty : r;
 		}
 		catch (ArrayIndexOutOfBoundsException e) {
@@ -85,6 +85,10 @@ public class GridBox<T> {
 
 	public void put(int gridX, int gridY, Set<T> items) throws ArrayIndexOutOfBoundsException {
 		boxes[gridX][gridY] = items;
+	}
+
+	public boolean containsInGridBox(int gridX, int gridY, T item) {
+		return this.getGridBox(gridX, gridY).contains(item);
 	}
 
 	@Nullable

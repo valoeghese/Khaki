@@ -26,7 +26,7 @@ public class Main extends PanelTest {
 		// last seed I had to fix: 2333285187735730582L
 		// 6328360064685290253 is a bit funny ...
 		// last last edited merging with: -6731418085665489146 : Solution: was using Y (a horizontal axis in the generator) instead of Value (which stores height)
-		// last edited merging with: 4310129288462693751 to add backwards merging
+		// last edited merging with: 4310129288462693751 to add backwards merging, then smoothing
 		long seed = 4310129288462693751L;//new Random().nextLong();
 		System.out.println("Using Seed: " + seed);
 
