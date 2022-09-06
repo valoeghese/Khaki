@@ -114,4 +114,8 @@ public final class Maths {
 	public static <T> T tttr(List<T> ts, Random tt) {
 		return ts.remove(tt.nextInt(ts.size()));
 	}
+
+	public static boolean isPosApproximatelyAt(int x, int y, int tx, int ty, int leniency) {
+		return x - leniency <= tx && x + leniency >= tx && y - leniency <= ty && y + leniency >= ty;
+	}
 }

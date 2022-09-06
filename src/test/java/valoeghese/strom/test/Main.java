@@ -23,11 +23,11 @@ import java.util.Random;
 public class Main extends PanelTest {
 	public static void main(String[] args) throws Exception {
 		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		// last seed I had to fix: 2333285187735730582L
+		// last seed I had to fix: -3332171171912474544
 		// 6328360064685290253 is a bit funny ...
 		// last last edited merging with: -6731418085665489146 : Solution: was using Y (a horizontal axis in the generator) instead of Value (which stores height)
 		// last edited merging with: 4310129288462693751 to add backwards merging, then smoothing, and fix an issue with rivers both redirecting and merging into another river creating loops
-		long seed = new Random().nextLong();
+		long seed = -3332171171912474544L;//new Random().nextLong();
 		System.out.println("Using Seed: " + seed);
 
 		// create worldgen
@@ -39,6 +39,7 @@ public class Main extends PanelTest {
 		generator.riverCount = 10;
 		generator.mergeThreshold = 12.0;
 		generator.warn = System.err::println;
+		//generator.debug = System.out::printf;
 
 		// Pregenerate the central continent data
 		long t = System.currentTimeMillis();

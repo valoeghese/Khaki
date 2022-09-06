@@ -11,6 +11,7 @@ public class RiverContinentDisplay extends ContinentDisplay {
 
 	@Override
 	public int getColour(int x, int y) {
+		//if (Maths.isPosApproximatelyAt(x, y, -373, -261, 4)) return Maths.rgb(200, 0, 50);
 		double height = this.generator._testContinentRiver(this.pregeneratedData, x, y);
 
 		if ((this.viewMode & 0x1) == 1) {

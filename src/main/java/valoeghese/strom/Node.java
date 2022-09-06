@@ -33,6 +33,7 @@ public class Node {
 	@Nullable
 	public transient Node next;
 	public transient int river;
+	public transient boolean followsMerge;
 
 	public void write(DataOutput out) throws IOException {
 		previous.write(out);

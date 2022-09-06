@@ -1,5 +1,6 @@
 package valoeghese.strom;
 
+import valoeghese.strom.utils.FormatPrinter;
 import valoeghese.strom.utils.GridBox;
 import valoeghese.strom.utils.Maths;
 import valoeghese.strom.utils.Noise;
@@ -27,12 +28,13 @@ public class TerrainGenerator {
 
 	// optional settings. you can change these
 	public Consumer<String> warn = s -> {};
+	public FormatPrinter debug = (s, os) -> {};
 
 	public TerrainGenerator(long seed) {
 		this.seed = seed;
 
 		// initialise generators
-		//this.voronoi = new LloydVoronoi(seed, 0.33);
+		//this.voronoi = new SpreadRelaxationVoronoi(seed, 0.33);
 		this.voronoi = new Voronoi(seed, 0.6);
 		this.noise = new Noise(new Random(seed));
 	}
@@ -208,6 +210,8 @@ public class TerrainGenerator {
 
 	private ContinentData generateRivers(ContinentData continentData, Random rand) {
 		for (int i = 0; i < riverCount; i++) {
+			this.debug.printf("#%d\n", i);
+
 			List<Point> river = new ArrayList<>();
 
 			// generate the river points
@@ -228,7 +232,7 @@ public class TerrainGenerator {
 
 			// the node to merge with, when two rivers combine.
 			Node merge = null;
-			double lastHeight = Double.MAX_VALUE;
+			double lastHeight;
 
 			// for trying to get unstuck from oscillations between points when in a pit
 			boolean forcedSearchStep = false;
@@ -312,11 +316,14 @@ public class TerrainGenerator {
 					while (nearbyNodes.size() > 0) {
 						Node node = nearbyNodes.removeFirst();
 
+						// check current because we're still constructing *points*. we're interested into merging at *points*, and the node is placed at the position of current in the grid
+						// however the next node is important for flow as it is required to remain to have continuous flow
+						// see: the code for preservation
 						if (Math.abs(node.current().getX() - x) + Math.abs(node.current().getY() - y) <= this.mergeThreshold) {
 							// It can flow to the node if the node position is lower or equal to the last height it flows from
 							if (node.current().getHeight() <= lastHeight) {
 								if (!redirectedRivers.contains(node.river)) {
-									//System.out.println("merging...");
+									this.debug.printf("\tMerging #%d...\n", node.river);
 									merge = node;
 
 									nextPoints.add(node.current().asImportant()); // add the node position instead of the close position to the node, mark the merge point as important
@@ -324,7 +331,7 @@ public class TerrainGenerator {
 									//System.out.println(nodesToRedirect.size());
 									// redirect
 									for (Node redirectMeDaddy : nodesToRedirect) {
-										// from the river to redirect,
+										// from the river to redirect, to the point we are merging into
 										continentData.rivers().add(
 												(int) node.current().getX(),
 												(int) node.current().getY(),
@@ -336,13 +343,20 @@ public class TerrainGenerator {
 										);
 									}
 
+									// preservation
+									// mark the next node in the series as needing to be preserved
+									// i.e., redirection schemes *cannot* remove it!
+									// this is because it needs to be kept for the river(s) merging into this new river
+									// the path following it can be rewritten but there must naturally still be a path flowing from this
+									if (node.next != null) node.next.followsMerge = true;
+
 									break riverPointAdder;
 								}
 							}
 							// Else, get the node to flow to *it* (and destroy the original river)
 							// Only if they're close enough though (20 blocks)
 							else if (node.current().getHeight() - 30 <= lastHeight) {
-								//System.out.println("redirecting...");
+								this.debug.printf("\tRedirecting #%d...\n", node.river);
 
 								// recursively delete children of the node
 								Node deleteMeDaddy = node;
@@ -350,7 +364,8 @@ public class TerrainGenerator {
 									continentData.rivers().remove((int) deleteMeDaddy.current().getX(), (int) deleteMeDaddy.current().getY(), deleteMeDaddy);
 									// don't iterate over this in future either, in case we haven't got to you
 									nearbyNodes.remove(deleteMeDaddy);
-								} while ((deleteMeDaddy = deleteMeDaddy.next) != null);
+								// don't try delete null nor a node that follows a merge
+								} while ((deleteMeDaddy = deleteMeDaddy.next) != null && !deleteMeDaddy.followsMerge);
 
 								// reimplement node
 								// don't implement it just yet in case it redirects somewhere else tho
@@ -432,6 +447,8 @@ public class TerrainGenerator {
 				}
 			}
 
+			this.debug.printf("\tFinal Pos:\n\t\th = %.1f\n\t\t@ (%.1f %.1f)\n", h, x, y);
+
 			//river = this.smoothRiverPoints(river);
 
 			// convert to nodes
@@ -448,6 +465,8 @@ public class TerrainGenerator {
 				try {
 					Node node = new Node(previous, point, i);
 					node = this.smoothRiverNodes(frame, node);
+					// if it follows an important point (i.e., a merge point), ensure the redirect algorithm knows so it can preserve it
+					node.followsMerge = node.previous().isImportant();
 
 					previousNode.next = node; // store in case this river needs to be redirected
 					frame.add((int) point.getX(), (int) point.getY(), node);
