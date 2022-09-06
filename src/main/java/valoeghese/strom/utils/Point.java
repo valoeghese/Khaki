@@ -83,7 +83,11 @@ public class Point {
 		return new Point(this.x, this.y, height, this.flags);
 	}
 
-	public Point markImportant() {
+	/**
+	 * Returns this point marked as important, in that it should not be removed when smoothing!
+	 * Used for merge points during pregen.
+	 */
+	public Point asImportant() {
 		return new Point(this.x, this.y, this.height, this.flags | 0x1);
 	}
 

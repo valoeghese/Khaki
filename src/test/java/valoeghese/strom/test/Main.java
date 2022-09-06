@@ -26,8 +26,8 @@ public class Main extends PanelTest {
 		// last seed I had to fix: 2333285187735730582L
 		// 6328360064685290253 is a bit funny ...
 		// last last edited merging with: -6731418085665489146 : Solution: was using Y (a horizontal axis in the generator) instead of Value (which stores height)
-		// last edited merging with: 4310129288462693751 to add backwards merging, then smoothing
-		long seed = 4310129288462693751L;//new Random().nextLong();
+		// last edited merging with: 4310129288462693751 to add backwards merging, then smoothing, and fix an issue with rivers both redirecting and merging into another river creating loops
+		long seed = new Random().nextLong();
 		System.out.println("Using Seed: " + seed);
 
 		// create worldgen
@@ -36,6 +36,7 @@ public class Main extends PanelTest {
 		generator.riverInterpolationSteps = 10;
 		generator.mountainsPerRange = 11;
 		generator.riverStep = 16;
+		generator.riverCount = 10;
 		generator.mergeThreshold = 12.0;
 		generator.warn = System.err::println;
 

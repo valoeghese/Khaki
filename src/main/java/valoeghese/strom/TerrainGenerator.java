@@ -23,6 +23,7 @@ public class TerrainGenerator {
 	// merge threshold for river node points, i.e. the smallest manhattan distance at which they become the same point
 	public double mergeThreshold;
 	public double riverStep;
+	public int riverCount;
 
 	// optional settings. you can change these
 	public Consumer<String> warn = s -> {};
@@ -75,6 +76,7 @@ public class TerrainGenerator {
 
 		// find the max mtn strength
 		// todo smoother transitions between mountains?
+		// use ridged noise rather than specific mountain peaks?
 		double maxMtnStrength = 0;
 
 		// also treat height as weighted average of how 'strong' they are
@@ -205,9 +207,7 @@ public class TerrainGenerator {
 	}
 
 	private ContinentData generateRivers(ContinentData continentData, Random rand) {
-		final int nRiversToGenerate = 10;
-
-		for (int i = 0; i < nRiversToGenerate; i++) {
+		for (int i = 0; i < riverCount; i++) {
 			List<Point> river = new ArrayList<>();
 
 			// generate the river points
@@ -223,7 +223,8 @@ public class TerrainGenerator {
 			double y = riverNodePos.getY();
 			// current river height
 			double h = this.sampleContinentBase(continentData, (int) x, (int) y);
-			river.add(riverNodePos.withHeight(h));
+			riverNodePos = riverNodePos.withHeight(h);
+			river.add(riverNodePos);
 
 			// the node to merge with, when two rivers combine.
 			Node merge = null;
@@ -292,6 +293,12 @@ public class TerrainGenerator {
 					y += dy;
 					riverNodePos = new Point(x, y);
 
+					x = riverNodePos.getX();
+					y = riverNodePos.getY();
+					// current river height
+					h = this.sampleContinentBase(continentData, (int) x, (int) y);
+					riverNodePos = riverNodePos.withHeight(h);
+
 					// keep track of any other rivers that need to be redirected
 					List<Node> nodesToRedirect = new ArrayList<>();
 
@@ -311,8 +318,9 @@ public class TerrainGenerator {
 								if (!redirectedRivers.contains(node.river)) {
 									//System.out.println("merging...");
 									merge = node;
-									nextPoints.add(node.current()); // add the node position instead of the close position to the node
-									
+
+									nextPoints.add(node.current().asImportant()); // add the node position instead of the close position to the node, mark the merge point as important
+
 									//System.out.println(nodesToRedirect.size());
 									// redirect
 									for (Node redirectMeDaddy : nodesToRedirect) {
@@ -327,13 +335,14 @@ public class TerrainGenerator {
 												)
 										);
 									}
+
 									break riverPointAdder;
 								}
 							}
 							// Else, get the node to flow to *it* (and destroy the original river)
 							// Only if they're close enough though (20 blocks)
 							else if (node.current().getHeight() - 30 <= lastHeight) {
-								System.out.println("redirecting...");
+								//System.out.println("redirecting...");
 
 								// recursively delete children of the node
 								Node deleteMeDaddy = node;
@@ -353,15 +362,15 @@ public class TerrainGenerator {
 						}
 					}
 
+					// if it redirects, mark important
+					if (!nodesToRedirect.isEmpty()) {
+						riverNodePos = riverNodePos.asImportant();
+					}
+
 					// Note that redirections are all to the current node.
+					nextPoints.add(riverNodePos);
 
-					x = riverNodePos.getX();
-					y = riverNodePos.getY();
-					// current river height
-					h = this.sampleContinentBase(continentData, (int) x, (int) y);
-					nextPoints.add(riverNodePos.withHeight(h));
-
-					// redirect
+					// redirections
 					for (Node redirectMeDaddy : nodesToRedirect) {
 						// from the river to redirect,
 						continentData.rivers().add(
@@ -423,7 +432,6 @@ public class TerrainGenerator {
 				}
 			}
 
-			// todo, what if a point is filtered out that another node depends on?
 			//river = this.smoothRiverPoints(river);
 
 			// convert to nodes
@@ -490,11 +498,17 @@ public class TerrainGenerator {
 					// otherwise, if it's close enough to redirect, just do it
 					if (n.next != null && newPoint.squaredDist(existingPoint) <= riverSmoothRad * riverSmoothRad) {
 						// remove points up until the new node (or a required node for a merge)
+						// don't remove the original node though. we will merely create a new bridge between these points
 						Node removeMe = n;
 
 						while ((removeMe = removeMe.next) != null) {
+							// an important point signifies a point where something is merged into
+							// if the previous point is important, it means that this is the continuation of a merging path!
+							// therefore stop going down the river path and removing.
+							if (removeMe.previous().isImportant()) break;
+
 							frame.remove((int) removeMe.current().getX(), (int) removeMe.current().getY(), removeMe);
-						};
+						}
 
 						// substitute the next node to be added with a "summary" node, going from prev of the first removed node to current
 						// that way the river still flows consistently
