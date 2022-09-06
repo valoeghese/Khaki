@@ -92,6 +92,8 @@ public final class Maths {
 		return 2 << (n - 1);
 	}
 
+	// this operation is called ttt deal with it
+
 	/**
 	 * ttttt tttttt  ttttt
 	 * @param ts t tttt ttttttttt
@@ -117,5 +119,71 @@ public final class Maths {
 
 	public static boolean isPosApproximatelyAt(int x, int y, int tx, int ty, int leniency) {
 		return x - leniency <= tx && x + leniency >= tx && y - leniency <= ty && y + leniency >= ty;
+	}
+
+	// Stolen from 2fc0f18. I guess we've come full circle
+	// Stolen from Khaki
+	public static double distanceLineBetween(double startX, double startY, double endX, double endY, int x, int y) {
+		double dx = endX - startX;
+		double dy = endY - startY;
+
+		// try fix bugs by swappings all x and y and doing it backwards
+		if (Math.abs(dy) > Math.abs(dx)) {
+			// cache old vals
+			double oldDX = dx;
+			double oldSX = startX;
+			double oldEX = endX;
+			int oldX = x;
+
+			// swap
+			dx = dy;
+			startX = startY;
+			endX = endY;
+			x = y;
+
+			dy = oldDX;
+			startY = oldSX;
+			endY = oldEX;
+			y = oldX;
+		}
+
+		double m = dy / dx;
+		double targetY = m * x + startY - m * startX;
+
+		// if beyond the ends, use euclidean dist to the ends
+		if (targetY > endY) {
+			dx = x - endX;
+			dy = y - endY;
+			return Math.sqrt(dx * dx + dy * dy);
+		}
+		else if (targetY < startY) {
+			dx = x - startX;
+			dy = y - startY;
+			return Math.sqrt(dx * dx + dy * dy);
+		}
+
+		return Math.abs(y - targetY);
+	}
+
+	public static double min(double... doubles) {
+		double min = Double.POSITIVE_INFINITY;
+
+		for (double d: doubles) {
+			if (d < min) min = d;
+		}
+
+		return min;
+	}
+
+	public static double min(int n, double... doubles) {
+		n = Math.min(n, doubles.length);
+		double min = Double.POSITIVE_INFINITY;
+
+		for (int i = 0; i < n; i++) {
+			double d = doubles[i];
+			if (d < min) min = d;
+		}
+
+		return min;
 	}
 }

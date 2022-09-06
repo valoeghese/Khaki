@@ -4,6 +4,7 @@ import valoeghese.strom.ContinentData;
 import valoeghese.strom.TerrainGenerator;
 import valoeghese.strom.test.displays.BaseContinentDisplay;
 import valoeghese.strom.test.displays.Display;
+import valoeghese.strom.test.displays.LineBetweenDisplay;
 import valoeghese.strom.test.displays.RiverContinentDisplay;
 import valoeghese.strom.test.displays.VoronoiDisplay;
 import valoeghese.strom.utils.Point;
@@ -24,10 +25,10 @@ public class Main extends PanelTest {
 	public static void main(String[] args) throws Exception {
 		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		// last seed I had to fix: -3332171171912474544
-		// 6328360064685290253 is a bit funny ...
+		// 6328360064685290253 is a bit funny ... edit: maybe my changes to river alg did sth here, but the world shape is still cool
 		// last last edited merging with: -6731418085665489146 : Solution: was using Y (a horizontal axis in the generator) instead of Value (which stores height)
 		// last edited merging with: 4310129288462693751 to add backwards merging, then smoothing, and fix an issue with rivers both redirecting and merging into another river creating loops
-		long seed = -3332171171912474544L;//new Random().nextLong();
+		long seed = new Random().nextLong();
 		System.out.println("Using Seed: " + seed);
 
 		// create worldgen
@@ -50,7 +51,8 @@ public class Main extends PanelTest {
 		Display displays[] = {
 				new VoronoiDisplay(generator),
 				new BaseContinentDisplay(generator, pregeneratedData),
-				new RiverContinentDisplay(generator, pregeneratedData)
+				new RiverContinentDisplay(generator, pregeneratedData),
+				new LineBetweenDisplay()
 		};
 
 		window = (Main) new Main().scale(2).size(800);

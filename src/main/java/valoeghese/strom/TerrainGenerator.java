@@ -8,13 +8,14 @@ import valoeghese.strom.utils.Point;
 import valoeghese.strom.utils.Voronoi;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class TerrainGenerator {
 	// settings. change these.
@@ -209,6 +210,17 @@ public class TerrainGenerator {
 	}
 
 	private ContinentData generateRivers(ContinentData continentData, Random rand) {
+		// create river sources
+		Point start = continentData.mountains()[0];
+		Point end = continentData.mountains()[continentData.mountains().length - 1];
+		final double riverPtOffset = this.continentDiameter * 0.05;
+
+		List<Point> pointList = IntStream.rangeClosed(1, riverCount)
+				.mapToDouble(i -> (double) i / (double) (riverCount + 1))
+				.mapToObj(d -> start.lerp(d, end).add((rand.nextDouble() - 0.5) * riverPtOffset, (rand.nextDouble() - 0.5) * riverPtOffset))
+				.collect(Collectors.toList());
+
+		// create rivers
 		for (int i = 0; i < riverCount; i++) {
 			this.debug.printf("#%d\n", i);
 
@@ -218,10 +230,7 @@ public class TerrainGenerator {
 			// start in the mountains
 			// https://stackoverflow.com/questions/2043783/how-to-efficiently-performance-remove-many-items-from-list-in-java
 			// Linked list structure is better for removing items since it just has to change node connections
-			List<Point> mtnPositions = new LinkedList<>(Arrays.asList(continentData.mountains()));
-
-			Point riverNodePos = Maths.tttr(mtnPositions, rand)
-					.lerp(rand.nextDouble() * 0.2 + 0.5, Maths.tttr(mtnPositions, rand));
+			Point riverNodePos = pointList.get(i);
 
 			double x = riverNodePos.getX();
 			double y = riverNodePos.getY();
