@@ -9,5 +9,6 @@ public class Colours {
 	public static int BLACK = Maths.rgb(0, 0, 0);
 	public static int BLUE = Maths.rgb(0, 100, 200);
 	public static int SEA_BLUE = Maths.rgb(0, 0, 200);
+	public static int SKY = Maths.rgb(160, 185, 250);
 	public static int SANDY = Maths.rgb(200, 200, 100);
 }

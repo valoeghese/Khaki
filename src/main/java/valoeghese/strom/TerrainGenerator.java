@@ -45,8 +45,52 @@ public class TerrainGenerator {
 	private final Voronoi voronoi;
 	private final Noise noise;
 
+	// outputs into input double[3]: terrainHeght, riverHeight, riverDist
+	// for optimising operations via reuse of array objects
+	public void sampleContinentHeights(ContinentData data, int x, int y, double[] heights) {
+		double baseHeight = this.sampleContinentBase(data, x, y);
+
+		// search river nodes nearby to find closest position
+		int gridX = data.rivers().gridSpace(x);
+		int gridY = data.rivers().gridSpace(y);
+
+		Point closestPoint = null;
+		double closestSqrDist = Double.POSITIVE_INFINITY;
+
+		// check surrounding boxes too
+		for (int xo = -1; xo <= 1; xo++) {
+			for (int yo = -1; yo <= 1; yo++) {
+				for (Node n : data.rivers().getGridBox(gridX + xo, gridY + yo)) {
+					// get closest point on the node, this is the point for the node to compare
+					Point point = Maths.closestPointLineBetween(n.previous(), n.current(), x, y);
+					double sqrDist = point.squaredDist(x, y);
+
+					if (sqrDist < closestSqrDist) {
+						closestSqrDist = sqrDist;
+						closestPoint = point;
+					}
+				}
+			}
+		}
+
+		// extract river height
+		double riverHeight = closestPoint == null ? 0 : closestPoint.getHeight();
+
+		// river dist
+		double riverDist = Math.sqrt(closestSqrDist);
+
+		// use riverHeight/baseHeight merger for true terrain height (can end up covering river intentionally as an indication to cut through.
+		// rivers are always expected to potentially cut so they can flow.
+		double terrainHeight = adjustTerrainHeight(riverDist, baseHeight, riverHeight);
+
+		// return values
+		heights[0] = terrainHeight;
+		heights[1] = riverHeight;
+		heights[2] = riverDist;
+	}
+
 	public double mtnTransform(double v) {
-		return Math.sqrt(v); // 0.5 - 32 * Maths.pow5(Math.sqrt(v) - 0.5);
+		return Math.sqrt(v);
 	}
 
 	/**
@@ -698,4 +742,33 @@ public class TerrainGenerator {
 	public static final double BASE_DISTORT_FREQUENCY = 1.0 / 850.0;
 	public static final double BASE_HILLS_FREQUENCY = 1.0 / 300.0;
 	public static final int GRID_BOX_SIZE = 64;
+
+	private static final double maxInterpolateRadius = 56.0; // 32 + 16 + 8. still chosen arbitrarily. needed to be <= 64, the grid box size, but could still have some funny cases if it's larger as proven by my jittered grid voronoi algorithm searching a bit further!
+	private static final double minInterpolateRadius = maxInterpolateRadius; // originally 24. changed to = maxInterpolateRadius for the reason that even tho over a larger radius, the spread makes the overall dip less noticeable!
+	private static final double finalInterpolateHeightDiff = 15.0;
+	private static final double initialCoverHeightDiff = 20.0;
+
+	public static double adjustTerrainHeight(double distToRiver, double terrainHeight, double riverHeight) {
+		// strategy 1: when riverHeight ~= terrain height (or riverHeight > terrain height), linearly interpolate down to river height
+		// strategy 2: when riverHeight << terrain height, do no interpolation. Instead, the river will carve it's own path under terrain
+		// riverHeight >> terrain height should rarely happen
+		// this would probably be better to pick between based on the terrain height specifically at the nearest river point, but whatever.
+
+		// the bigger this is, the higher the terrain is than the river
+		double heightDiff = terrainHeight - riverHeight;
+
+		double strategy1 = Maths.clampMap(distToRiver, 0, Maths.clampMap(heightDiff, 2 * initialCoverHeightDiff / 3, initialCoverHeightDiff, maxInterpolateRadius, minInterpolateRadius), riverHeight, terrainHeight);
+		double strategy2 = terrainHeight;
+
+		// this could be simplified into clampMap, however this is minutely faster
+		// also conveys what's happening a lot better
+
+		// case 1, strategy 1
+		if (heightDiff <= finalInterpolateHeightDiff) return strategy1;
+		// case 2, strategy 2
+		if (heightDiff >= initialCoverHeightDiff) return strategy2;
+
+		// case 3, between strategy 1 and strategy 2, interpolate
+		return Maths.map(heightDiff, finalInterpolateHeightDiff, initialCoverHeightDiff, strategy1, strategy2);
+	}
 }
