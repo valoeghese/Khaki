@@ -24,10 +24,7 @@ import java.util.Random;
 public class Main extends PanelTest {
 	public static void main(String[] args) throws Exception {
 		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		// last seed I had to fix: -3332171171912474544
-		// 6328360064685290253 is a bit funny ... edit: maybe my changes to river alg did sth here, but the world shape is still cool
-		// last last edited merging with: -6731418085665489146 : Solution: was using Y (a horizontal axis in the generator) instead of Value (which stores height)
-		// last edited merging with: 4310129288462693751 to add backwards merging, then smoothing, and fix an issue with rivers both redirecting and merging into another river creating loops
+		// last seed I had to fix: 4061103509087970498
 		long seed = new Random().nextLong();
 		System.out.println("Using Seed: " + seed);
 

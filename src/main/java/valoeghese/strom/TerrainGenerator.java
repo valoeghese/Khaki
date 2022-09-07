@@ -244,7 +244,7 @@ public class TerrainGenerator {
 			double lastHeight;
 
 			// for trying to get unstuck from oscillations between points when in a pit
-			boolean forcedSearchStep = false;
+			int forcedSearchSteps = 0;
 
 			// set of rivers redirected
 			// to prevent merging into a river which has been redirected into this one
@@ -267,8 +267,11 @@ public class TerrainGenerator {
 				// height positive-y, etc
 				double hPx, hPy, hNy, hNx;
 
+				// for keeping track this iteration
+				int forcedSearchStep = forcedSearchSteps;
+
 				do {
-					if (++searchSteps == 2) forcedSearchStep = false;
+					++searchSteps;
 
 					// calculate surrounding heights
 					hPy = this.sampleContinentBase(continentData, (int) x, (int) (y + riverSearchStep));
@@ -279,7 +282,7 @@ public class TerrainGenerator {
 					// if stuck in a ditch, flood-fill search for the exit, then make a mad dash
 					riverSearchStep += this.riverStep;
 					//if (searchSteps > 1) System.out.printf("%d >> %.3f | %.3f %.3f %.3f %.3f\n", searchSteps, h, hPy, hPx, hNy, hNx);
-				} while (forcedSearchStep || (hPx >= h && hPy >= h && hNx >= h && hNy >= h));
+				} while (forcedSearchStep-- > 0 || (hPx >= h && hPy >= h && hNx >= h && hNy >= h));
 
 				// calculate vector directions for flow based on height difference
 				// negative - positive to get downwards flow
@@ -410,7 +413,12 @@ public class TerrainGenerator {
 				}
 
 				// base this on what was *actually* found.
-				forcedSearchStep = lastHeight < h;
+				if (lastHeight < h) {
+					if (forcedSearchSteps < 4) forcedSearchSteps++;
+				}
+				else {
+					forcedSearchSteps = 0;
+				}
 
 				// ok, now we should check the points are going at least flat, hopefully downstream.
 				// h is the final height of the points to add
