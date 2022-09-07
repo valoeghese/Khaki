@@ -6,6 +6,7 @@ import valoeghese.strom.test.displays.BaseContinentDisplay;
 import valoeghese.strom.test.displays.Display;
 import valoeghese.strom.test.displays.LineBetweenDisplay;
 import valoeghese.strom.test.displays.RiverContinentDisplay;
+import valoeghese.strom.test.displays.RiverTransitionDemoDisplay;
 import valoeghese.strom.test.displays.VoronoiDisplay;
 import valoeghese.strom.utils.Point;
 
@@ -24,7 +25,7 @@ import java.util.Random;
 public class Main extends PanelTest {
 	public static void main(String[] args) throws Exception {
 		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		// last seed I had to fix: 4061103509087970498
+		// last seed I had to fix: 5357643795313246325
 		long seed = new Random().nextLong();
 		System.out.println("Using Seed: " + seed);
 
@@ -49,7 +50,8 @@ public class Main extends PanelTest {
 				new VoronoiDisplay(generator),
 				new BaseContinentDisplay(generator, pregeneratedData),
 				new RiverContinentDisplay(generator, pregeneratedData),
-				new LineBetweenDisplay()
+				new LineBetweenDisplay(),
+				new RiverTransitionDemoDisplay()
 		};
 
 		window = (Main) new Main().scale(2).size(800);

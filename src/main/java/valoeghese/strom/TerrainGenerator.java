@@ -414,7 +414,7 @@ public class TerrainGenerator {
 
 				// base this on what was *actually* found.
 				if (lastHeight < h) {
-					if (forcedSearchSteps < 4) forcedSearchSteps++;
+					if (forcedSearchSteps < 7) forcedSearchSteps++;
 				}
 				else {
 					forcedSearchSteps = 0;
