@@ -7,7 +7,7 @@ public class LineBetweenDisplay implements Display {
 
 	@Override
 	public int getColour(int x, int y) {
-		double d1 = 0.01 * Maths.distanceLineBetween(0, 0, 200, 200, x, y);
+		double d1 = 0.01 * Maths.distanceLineBetween(-200, -200, 200, 200, x, y);
 		double d2 = 0.01 * Maths.distanceLineBetween(0, 0, 200, 0, x, y);
 		double d3 = 0.01 * Maths.distanceLineBetween(0, 200, 0, 0, x, y);
 		double d4 = 0.01 * Maths.distanceLineBetween(0, 200, 200, 200, x, y);
@@ -18,6 +18,6 @@ public class LineBetweenDisplay implements Display {
 
 	@Override
 	public void modifyView(int direction) {
-		n = (n + direction) % 4;
+		n = (n + direction) & 3;
 	}
 }

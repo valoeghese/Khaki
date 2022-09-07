@@ -121,48 +121,135 @@ public final class Maths {
 		return x - leniency <= tx && x + leniency >= tx && y - leniency <= ty && y + leniency >= ty;
 	}
 
-	// Stolen from 2fc0f18. I guess we've come full circle
+	public static boolean isApproxEqu(double v1, double v2, double leniency) {
+		return v1 - leniency <= v2 && v1 + leniency >= v2;
+	}
+
+	public static double fastInvSqrt(double x) { // https://stackoverflow.com/questions/11513344/how-to-implement-the-fast-inverse-square-root-in-java
+		double xhalf = 0.5 * x;
+		long i = Double.doubleToLongBits(x);
+		i = 0x5fe6ec85e7de30daL - (i >> 1);
+		x = Double.longBitsToDouble(i);
+		x *= (1.5 - xhalf * x * x);
+		x *= (1.5 - xhalf * x * x); // second iteration of newton's method
+		return x;
+	}
+
+	// Rewritten from original code, can probably ignore this notice
+	// Stolen from 2fc0f18. I guess we've come full circle.
 	// Stolen from Khaki
-	public static double distanceLineBetween(double startX, double startY, double endX, double endY, int x, int y) {
-		double dx = endX - startX;
+	public static double distanceLineBetween(double startX, double startY, double endX, double endY, double x, double y) {
+		// observation 1: the distance to the line is the distance to the closest point. so we need to find the closest point
+		// observation 2: the closest point between the bounds can be found by looking for the closest point out of bounds, then constraining it
+		// observation 3: the line between a point and the closest point on an infinite line is perpendicular to said line
+		// And I recall doing the calculation for perpendicular line gradient in maths class back when I was at high school! a/b -> -b/a
+		// DsG
+
+		// https://www.desmos.com/calculator/xd2arrblxx
+
+		// =================================================
+		//  Step 0: Order start/end by Y. So startY <= endY
+		// =================================================
+		if (startY > endY) {
+			// switcheroo
+			double tempEndY = endY;
+			double tempEndX = endX;
+
+			endY = startY;
+			endX = startX;
+
+			startY = tempEndY;
+			startX = tempEndX;
+		}
+
+		// =====================================================
+		//  Step 1: Get Gradients for Main & Perpendicular Line
+		// =====================================================
+
 		double dy = endY - startY;
+		double dx = endX - startX;
 
-		// try fix bugs by swappings all x and y and doing it backwards
-		if (Math.abs(dy) > Math.abs(dx)) {
-			// cache old vals
-			double oldDX = dx;
-			double oldSX = startX;
-			double oldEX = endX;
-			int oldX = x;
+		// normalise
+		double invLen = fastInvSqrt(dy * dy + dx * dx);
+		dy *= invLen;
+		dx *= invLen;
 
-			// swap
-			dx = dy;
-			startX = startY;
-			endX = endY;
-			x = y;
+		// =============================================
+		//  (Step 1.5: Ensure no near-infinite numbers)
+		// =============================================
 
-			dy = oldDX;
-			startY = oldSX;
-			endY = oldEX;
-			y = oldX;
+		if (isApproxEqu(dy, 0, 0.002) || isApproxEqu(dx, 0, 0.002)) {
+			// rotate by 45 degree matrix and perform the calculation again to increase accuracy
+			// because division by tiny numbers ~= infinity
+			// ah yes when sin(45 deg) != cos (45 deg)
+			// approximation moment
+			final double mat11 = 0.7071067811865476; //Math.cos(Math.PI / 4);
+			final double mat12 = -0.7071067811865475; //-Math.sin(Math.PI / 4);
+			final double mat21 = 0.7071067811865475; //Math.sin(Math.PI / 4);
+			final double mat22 = 0.7071067811865476; //Math.cos(Math.PI / 4);
+
+			double startXNew = mat11 * startX + mat12 * startY;
+			double startYNew = mat21 * startX + mat22 * startY;
+
+			double endXNew = mat11 * endX + mat12 * endY;
+			double endYNew = mat21 * endX + mat22 * endY;
+
+			double xNew = mat11 * x + mat12 * y;
+			double yNew = mat21 * x + mat22 * y;
+
+			return distanceLineBetween(startXNew, startYNew, endXNew, endYNew, xNew, yNew);
 		}
 
-		double m = dy / dx;
-		double targetY = m * x + startY - m * startX;
+		// main line gradient is m = dy/dx
+		// perpendicular line gradient is m = -dx/dy
 
-		// if beyond the ends, use euclidean dist to the ends
-		if (targetY > endY) {
-			dx = x - endX;
-			dy = y - endY;
-			return Math.sqrt(dx * dx + dy * dy);
+		// in addition to gradient, we have a point where each line must intersect
+		// we can get +C from this via algebraic rearrangement:
+		//   For known x, y and given m:
+		//    m(x) + c = y
+		//    c = y - m(x)
+		// We will use (startX, startY) for the main line, and (x, y) for the perpendicular line
+		// (endX, endY) also works for main line. the decision there was arbitrary
+
+		// Notation: line-1 is the main line, line-2 is the perpendicular line.
+
+		double m1 = dy / dx;
+		double m2 = -dx / dy;
+
+		// =========================================
+		//  Step 2: Solve for Point Of Intersection
+		// =========================================
+
+		double c1 = startY - m1 * startX;
+		double c2 = y - m2 * x;
+
+		// Did some algebra (method of elimination on simultaneous equations) to find intersection point x and y in terms of m1, m2, c1, c2
+		double iy = ((m1 / m2) * c2 - c1) / ((m1 / m2) - 1);
+		// don't worry, m1 can never be = m2 because they are perpendicular
+		double ix = (c2 - c1) / (m1 - m2);
+
+		// ========================================================================
+		//  Step 3: If iy and ix are out of line bounds, throw them back in bounds
+		// ========================================================================
+
+		// check by y since ensured to be ordered by y position
+		if (iy < startY) {
+			iy = startY;
+			ix = startX;
 		}
-		else if (targetY < startY) {
-			dx = x - startX;
-			dy = y - startY;
-			return Math.sqrt(dx * dx + dy * dy);
+		else if (iy > endY) {
+			iy = endY;
+			ix = endX;
 		}
 
-		return Math.abs(y - targetY);
+		// =====================================================================
+		//  Step 4: Finally, calculate euclidean distance to the point (ix, iy)
+		// =====================================================================
+
+		// repurpose dx and dy to mean axial distances between (x,y) and (ix,iy)
+		dx = ix - x;
+		dy = iy - y;
+		return Math.sqrt(dx * dx + dy * dy);
 	}
 
 	public static double min(double... doubles) {
