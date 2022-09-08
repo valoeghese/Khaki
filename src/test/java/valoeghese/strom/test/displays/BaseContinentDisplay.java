@@ -12,6 +12,7 @@ public class BaseContinentDisplay extends ContinentDisplay {
 
 	@Override
 	public int getColour(int x, int y) {
+		if (Maths.isApproxEqu(x * x + y * y, Maths.sqr((double)generator.continentDiameter/2.0), 100 * 100)) return Colours.RED;
 		double height = (this.viewMode & 0x2) == 0 ? this.generator.sampleContinentBase(this.pregeneratedData, x, y) : this.generator._testContinentBase(this.pregeneratedData, x, y);
 
 		if ((this.viewMode & 0x1) == 1) {

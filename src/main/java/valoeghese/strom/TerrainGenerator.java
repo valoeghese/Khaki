@@ -155,7 +155,7 @@ public class TerrainGenerator {
 
 		Point[] mountainRange = this.generateMountainRange(rand, centre);
 
-		return this.generateRivers(new ContinentData(centre, mountainRange, new GridBox<>(GRID_BOX_SIZE, 1 + this.continentDiameter / (2 * GRID_BOX_SIZE))), rand);
+		return this.generateRivers(new ContinentData(centre, mountainRange, new GridBox<>(GRID_BOX_SIZE, (256 + this.continentDiameter) / (2 * GRID_BOX_SIZE))), rand);
 	}
 
 	private final int minMtnHeight = 140;
@@ -166,8 +166,12 @@ public class TerrainGenerator {
 		final int nMtns = this.mountainsPerRange;
 
 		Point[] mountainRange = new Point[nMtns];
-		// use generateCenteredStartEnd if you want the range centered around the continent centre
-		this.generateMountainStartEnd(rand, centre, mountainRange);
+
+		// set these to 0 if you want the range centered around the continent centre
+		double chainX = (rand.nextDouble() - 0.5) * 0.33 * this.continentDiameter + centre.getX();
+		double chainY = (rand.nextDouble() - 0.5) * 0.33 * this.continentDiameter + centre.getY();
+
+		this.generateMountainStartEnd(rand, chainX, chainY, mountainRange);
 
 		Point start = mountainRange[0];
 		Point end = mountainRange[nMtns - 1];
@@ -183,72 +187,36 @@ public class TerrainGenerator {
 		return mountainRange;
 	}
 
-	private void generateMountainStartEnd(Random rand, Point centre, Point[] mountainRange) {
-		double chainX = (rand.nextDouble() - 0.5) * 0.33 * this.continentDiameter + centre.getX();
-		double chainY = (rand.nextDouble() - 0.5) * 0.33 * this.continentDiameter + centre.getY();
+	/**
+	 * Generates the mountain start and end positions and stores them at the start and end of the given array.
+	 * @param rand the random number generator to use.
+	 * @param chainX the x position of the centre of the mountain chain
+	 * @param chainY the y position of the centre of the mountain chain
+	 * @param mountainRange the array to store the start and end positions in.
+	 *                         Only the first (position 0) and last (position length - 1) entries will be modified.
+	 */
+	private void generateMountainStartEnd(Random rand, double chainX, double chainY, Point[] mountainRange) {
+		final double maxChainLen = 0.35 * this.continentDiameter;
+		final double minChainLen = 0.25 * this.continentDiameter;
 
-		// each point also carries, as a value, the mountain height.
-		Point start = new Point(chainX, chainY, rand.nextInt(deltaMtnHeight) + minMtnHeight);
+		int sign = rand.nextInt(2) * 2 - 1;
+		double chainLength = sign * (rand.nextDouble() * (maxChainLen - minChainLen) + minChainLen);
+		double chainAngle = rand.nextDouble() * Math.PI; // it mirrors so only bother withh 180 degrees
 
-		double eDX = (rand.nextDouble() - 0.5) * 0.5 * this.continentDiameter; // endDX
-		double eDY =  (rand.nextDouble() - 0.5) * 0.5 * this.continentDiameter; // endDY
-		//System.out.println((Math.abs(eDX) + Math.abs(eDY)) / this.continentDiameter);
+		// turn into x length (width) and y length (breadth) for the chain
+		double width = chainLength * Math.cos(chainAngle);
+		double breadth = chainLength * Math.sin(chainAngle);
 
-		// inb4 edX and eDy ~= 0 and the game gets stuck in a very big loop
-		// sike let's harcode a fix for that
-		if (Math.abs(eDX) + Math.abs(eDY) < 0.002 * this.continentDiameter) {
-			//System.out.println("Applying emergency EDX offset");
-			eDX += (0.5 + rand.nextDouble()) * 0.3 * this.continentDiameter;
-		}
-
-		while (Math.abs(eDX) + Math.abs(eDY) < 0.225 * this.continentDiameter) {
-			//System.out.println("Amplifying Point Spread");
-			eDX *= 1.3;
-			eDY *= 1.3;
-		}
-
-		Point end = new Point(
-				chainX + eDX,
-				chainY + eDY,
-				rand.nextInt(deltaMtnHeight) + minMtnHeight
-		);
-
-		mountainRange[0] = start;
-		mountainRange[mountainRange.length - 1] = end;
-	}
-
-	private void generateCenteredStartEnd(Random rand, Point centre, Point[] mountainRange) {
-		// Use same dX and dY algorithm
-		double eDX = (rand.nextDouble() - 0.5) * 0.5 * this.continentDiameter; // endDX
-		double eDY =  (rand.nextDouble() - 0.5) * 0.5 * this.continentDiameter; // endDY
-		//System.out.println((Math.abs(eDX) + Math.abs(eDY)) / this.continentDiameter);
-
-		// inb4 edX and eDy ~= 0 and the game gets stuck in a very big loop
-		// sike let's harcode a fix for that
-		if (Math.abs(eDX) + Math.abs(eDY) < 0.002 * this.continentDiameter) {
-			//System.out.println("Applying emergency EDX offset");
-			eDX += (0.5 + rand.nextDouble()) * 0.3 * this.continentDiameter;
-		}
-
-		while (Math.abs(eDX) + Math.abs(eDY) < 0.225 * this.continentDiameter) {
-			//System.out.println("Amplifying Point Spread");
-			eDX *= 1.3;
-			eDY *= 1.3;
-		}
-
-		// treat as diameter
-		eDX /= 2;
-		eDY /= 2;
-
+		// each point also carries the mountain height.
 		mountainRange[0] = new Point(
-				centre.getX() - eDX,
-				centre.getY() - eDX,
+				chainX - width * 0.5,
+				chainY - breadth * 0.5,
 				rand.nextInt(deltaMtnHeight) + minMtnHeight
 		);
 
 		mountainRange[mountainRange.length - 1] = new Point(
-				centre.getX() + eDX,
-				centre.getY() + eDY,
+				chainX + width * 0.5,
+				chainY + breadth * 0.5,
 				rand.nextInt(deltaMtnHeight) + minMtnHeight
 		);
 	}

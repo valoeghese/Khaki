@@ -25,7 +25,7 @@ import java.util.Random;
 public class Main extends PanelTest {
 	public static void main(String[] args) throws Exception {
 		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		// last seed I had to fix: 5357643795313246325
+		// last seed I had to fix: 7583974426950350893
 		long seed = new Random().nextLong();
 		System.out.println("Using Seed: " + seed);
 
