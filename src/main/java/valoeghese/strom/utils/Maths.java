@@ -254,9 +254,6 @@ public final class Maths {
 	}
 
 	public static Point closestPointLineBetween(Point start, Point end, double x, double y) {
-		double startX	= start.getX(),	startY	= start.getY();
-		double endX		= end.getX(),	endY	= end.getY();
-
 		// see distanceLineBetween for a header comment giving more logic
 
 		// https://www.desmos.com/calculator/xd2arrblxx
@@ -264,17 +261,16 @@ public final class Maths {
 		// =================================================
 		//  Step 0: Order start/end by Y. So startY <= endY
 		// =================================================
-		if (startY > endY) {
+
+		if (start.getY() > end.getY()) {
 			// switcheroo
-			double tempEndY = endY;
-			double tempEndX = endX;
-
-			endY = startY;
-			endX = startX;
-
-			startY = tempEndY;
-			startX = tempEndX;
+			Point tempStart = start;
+			start = end;
+			end = tempStart;
 		}
+
+		double startX	= start.getX(),	startY	= start.getY();
+		double endX		= end.getX(),	endY	= end.getY();
 
 		// =====================================================
 		//  Step 1: Get Gradients for Main & Perpendicular Line
