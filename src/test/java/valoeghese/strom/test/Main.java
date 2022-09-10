@@ -3,6 +3,7 @@ package valoeghese.strom.test;
 import valoeghese.strom.ContinentData;
 import valoeghese.strom.TerrainGenerator;
 import valoeghese.strom.test.displays.BaseContinentDisplay;
+import valoeghese.strom.test.displays.CombinedContinentDisplay;
 import valoeghese.strom.test.displays.Display;
 import valoeghese.strom.test.displays.LineBetweenDisplay;
 import valoeghese.strom.test.displays.RiverContinentDisplay;
@@ -47,11 +48,12 @@ public class Main extends PanelTest {
 		System.out.printf("Pregenerated Continent Data in %dms\n", t);
 
 		Display displays[] = {
-				new VoronoiDisplay(generator),
-				new BaseContinentDisplay(generator, pregeneratedData),
-				new RiverContinentDisplay(generator, pregeneratedData),
-				new LineBetweenDisplay(),
-				new RiverTransitionDemoDisplay()
+				new VoronoiDisplay(generator), // 1
+				new BaseContinentDisplay(generator, pregeneratedData), // 2
+				new RiverContinentDisplay(generator, pregeneratedData), // 3
+				new LineBetweenDisplay(), // 4
+				new RiverTransitionDemoDisplay(), // 5
+				new CombinedContinentDisplay(generator) // 6
 		};
 
 		window = (Main) new Main().scale(2).size(800);

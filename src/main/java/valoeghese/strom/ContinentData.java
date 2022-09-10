@@ -40,6 +40,8 @@ public record ContinentData(Point centre, Point[] mountains, GridBox<Node> river
 			// write rivers
 			dos.writeInt(rivers.getBoxSize());
 			dos.writeInt(rivers.getSquareRadius());
+			dos.writeInt(rivers.getOffsetX());
+			dos.writeInt(rivers.getOffsetY());
 
 			for (Set<Node>[] column : rivers.toArray()) {
 				for (@Nullable Set<Node> entry : column) {
@@ -82,8 +84,10 @@ public record ContinentData(Point centre, Point[] mountains, GridBox<Node> river
 			// rivers
 			int boxSize = dis.readInt();
 			int sqrRad = dis.readInt();
+			int ox = dis.readInt();
+			int oy = dis.readInt();
 
-			GridBox<Node> rivers = new GridBox<>(boxSize, sqrRad);
+			GridBox<Node> rivers = new GridBox<>(boxSize, sqrRad, ox, oy);
 
 			for (int x = 0; x < sqrRad * 2; x++) {
 				for (int y = 0; y < sqrRad * 2; y++) {

@@ -5,6 +5,8 @@ import valoeghese.strom.utils.GridBox;
 import valoeghese.strom.utils.Maths;
 import valoeghese.strom.utils.Noise;
 import valoeghese.strom.utils.Point;
+import valoeghese.strom.utils.PointCache;
+import valoeghese.strom.utils.SimpleCache;
 import valoeghese.strom.utils.Voronoi;
 
 import java.util.ArrayList;
@@ -45,14 +47,51 @@ public class TerrainGenerator {
 	private final Voronoi voronoi;
 	private final Noise noise;
 
+	private final PointCache<ContinentData> pregenDataCache = new PointCache<>(64, this::pregenerateContinentData);
+
+	public void sampleHeight(int x, int y, double[] heights) {
+		final double voronoiSize = this.continentDiameter * 1.6; // extra area for oceans
+
+		// voronoi regions
+		// shift into voronoi space
+		double voronoiX = (double) x / voronoiSize;
+		double voronoiY = (double) y / voronoiSize;
+
+		Point point = this.voronoi.sampleC(voronoiX, voronoiY).mul(voronoiSize); // shift out of voronoi space
+
+		double sqrDist = point.squaredDist(x, y);
+
+		final double continentRadius = this.continentDiameter * 0.5;
+		final double transitionMaxDist = continentRadius + 200;
+
+		if (sqrDist <= continentRadius * continentRadius) {
+			ContinentData pregeneratedData = this.pregenDataCache.sample(point);
+			this.sampleContinentHeights(pregeneratedData, x, y, heights);
+		}
+		else if (sqrDist <= transitionMaxDist * transitionMaxDist) {
+			ContinentData pregeneratedData = this.pregenDataCache.sample(point);
+			this.sampleContinentHeights(pregeneratedData, x, y, heights);
+
+			double progressOut = Maths.invLerp(Math.sqrt(sqrDist), continentRadius, transitionMaxDist);
+			heights[0] = Maths.lerp(progressOut, heights[0], -32.0);
+			heights[1] = Maths.lerp(progressOut, heights[1], 0);
+			heights[2] = heights[2] == Double.POSITIVE_INFINITY ? Double.POSITIVE_INFINITY : Maths.lerp(progressOut, heights[2], 100_000 /* arbitrary big value i can lerp with*/);
+		}
+		else {
+			heights[0] = Maths.clampMap(sqrDist, transitionMaxDist * transitionMaxDist, Maths.sqr(transitionMaxDist + 500), -32, -64);
+			heights[1] = 0;
+			heights[2] = Double.POSITIVE_INFINITY;
+		}
+	}
+
 	// outputs into input double[3]: terrainHeght, riverHeight, riverDist
 	// for optimising operations via reuse of array objects
 	public void sampleContinentHeights(ContinentData data, int x, int y, double[] heights) {
 		double baseHeight = this.sampleContinentBase(data, x, y);
 
 		// search river nodes nearby to find closest position
-		int gridX = data.rivers().gridSpace(x);
-		int gridY = data.rivers().gridSpace(y);
+		int gridX = data.rivers().gridSpaceX(x);
+		int gridY = data.rivers().gridSpaceY(y);
 
 		Point closestPoint = null;
 		double closestSqrDist = Double.POSITIVE_INFINITY;
@@ -156,7 +195,7 @@ public class TerrainGenerator {
 
 		Point[] mountainRange = this.generateMountainRange(rand, centre);
 
-		return this.generateRivers(new ContinentData(centre, mountainRange, new GridBox<>(GRID_BOX_SIZE, (256 + this.continentDiameter) / (2 * GRID_BOX_SIZE))), rand);
+		return this.generateRivers(new ContinentData(centre, mountainRange, new GridBox<>(GRID_BOX_SIZE, (256 + this.continentDiameter) / (2 * GRID_BOX_SIZE), (int)-centre.getX(), (int)-centre.getY())), rand);
 	}
 
 	private final int minMtnHeight = 140;
@@ -505,7 +544,7 @@ public class TerrainGenerator {
 				} catch (ArrayIndexOutOfBoundsException e) {
 					this.warn.accept("River went out of bounds of continent grid box! Previous and Offending positions follow:");
 					this.warn.accept(previous.getX() + ", " + previous.getY());
-					this.warn.accept(point.getX() + ", " + point.getY());
+					this.warn.accept(point.getX() + ", " + point.getY() + " in grid @ " + frame.gridSpaceX((int) point.getX()) + ", " + frame.gridSpaceY((int) point.getY()));
 					return continentData;
 				}
 
@@ -528,8 +567,8 @@ public class TerrainGenerator {
 		final double riverSmoothRad = riverSmoothConstant * this.riverStep;
 
 		Point newPoint = newNode.current();
-		int gridX = frame.gridSpace((int) newPoint.getX());
-		int gridY = frame.gridSpace((int) newPoint.getY());
+		int gridX = frame.gridSpaceX((int) newPoint.getX());
+		int gridY = frame.gridSpaceY((int) newPoint.getY());
 
 		// look in neighbouring cells
 		for (int xo = -1; xo <= 1; xo++) {
@@ -692,8 +731,8 @@ public class TerrainGenerator {
 	 */
 	public double _testContinentRiver(ContinentData continentData, int x, int y) {
 		// river info
-		int gridX = continentData.rivers().gridSpace(x);
-		int gridY = continentData.rivers().gridSpace(y);
+		int gridX = continentData.rivers().gridSpaceX(x);
+		int gridY = continentData.rivers().gridSpaceY(y);
 
 		for (int gxo = -1; gxo <= 1; gxo++) {
 			for (int gyo = -1; gyo <= 1; gyo++) {

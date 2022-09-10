@@ -81,7 +81,7 @@ public final class Maths {
 		return min + progress * (max - min);
 	}
 
-	public static double invLerp(double min, double max, double value) {
+	public static double invLerp(double value, double min, double max) {
 		return (value - min) / (max - min);
 	}
 

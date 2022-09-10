@@ -7,7 +7,7 @@ import java.util.Set;
 
 public class GridBoxTest {
 	public static void main(String[] args) {
-		GridBox<Integer> box = new GridBox<>(10, 3);
+		GridBox<Integer> box = new GridBox<>(10, 3, 0, 0);
 		box.add(4, 6, 4);
 		box.add(1, 6, 7);
 		box.add(11, 29, 56);

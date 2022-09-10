@@ -17,16 +17,21 @@ public class GridBox<T> {
 	 * @param boxSize the size of the box.
 	 * @param squareRadius the number of little boxes extended in each cardinal direction to form the big box.
 	 */
-	public GridBox(int boxSize, int squareRadius) {
+	public GridBox(int boxSize, int squareRadius, int offsetX, int offsetY) {
 		this.boxes = new Set[squareRadius * 2][squareRadius * 2];
 		this.boxSize = boxSize;
 		this.boxShift = squareRadius;
+
+		this.offsetX = offsetX;
+		this.offsetY = offsetY;
 	}
 
 	private final Collection<T> empty = List.of();
 	private final Set<T>[][] boxes;
 	private final int boxSize;
 	private final int boxShift;
+	private final int offsetX;
+	private final int offsetY;
 
 	public int getWidth() {
 		return this.boxes.length;
@@ -47,8 +52,8 @@ public class GridBox<T> {
 	// if you use this to modify the data you are cringe
 	public Collection<T> get(int x, int y) {
 		// convert to grid space
-		x = (x / boxSize) + this.boxShift;
-		y = (y / boxSize) + this.boxShift;
+		x = ((x + this.offsetX) / boxSize) + this.boxShift;
+		y = ((y + this.offsetY) / boxSize) + this.boxShift;
 
 		try {
 			Collection<T> r = boxes[x][y];
@@ -70,14 +75,26 @@ public class GridBox<T> {
 		}
 	}
 
-	public int gridSpace(int v) {
-		return (v / boxSize) + this.boxShift;
+	public int gridSpaceX(int x) {
+		return ((x + this.offsetX) / boxSize) + this.boxShift;
+	}
+
+	public int gridSpaceY(int y) {
+		return ((y + this.offsetY) / boxSize) + this.boxShift;
+	}
+
+	public int getOffsetX() {
+		return this.offsetX;
+	}
+
+	public int getOffsetY() {
+		return this.offsetY;
 	}
 
 	public void add(int x, int y, T item) throws ArrayIndexOutOfBoundsException {
 		// convert to grid space
-		x = (x / boxSize) + this.boxShift;
-		y = (y / boxSize) + this.boxShift;
+		x = ((x + this.offsetX) / boxSize) + this.boxShift;
+		y = ((y + this.offsetY) / boxSize) + this.boxShift;
 
 		if (boxes[x][y] == null) boxes[x][y] = new HashSet<>();
 		boxes[x][y].add(item);
@@ -94,8 +111,8 @@ public class GridBox<T> {
 	@Nullable
 	public Collection<T> removeAll(int x, int y) throws ArrayIndexOutOfBoundsException {
 		// convert to grid space
-		x = (x / boxSize) + this.boxShift;
-		y = (y / boxSize) + this.boxShift;
+		x = ((x + this.offsetX) / boxSize) + this.boxShift;
+		y = ((y + this.offsetY) / boxSize) + this.boxShift;
 
 		Collection<T> original = boxes[x][y];
 		boxes[x][y] = null;
@@ -104,8 +121,8 @@ public class GridBox<T> {
 
 	public void remove(int x, int y, T item) throws ArrayIndexOutOfBoundsException {
 		// convert to grid space
-		x = (x / boxSize) + this.boxShift;
-		y = (y / boxSize) + this.boxShift;
+		x = ((x + this.offsetX) / boxSize) + this.boxShift;
+		y = ((y + this.offsetY) / boxSize) + this.boxShift;
 
 		@Nullable Set<T> set = boxes[x][y];
 		if (set != null) set.remove(item);
@@ -142,7 +159,7 @@ public class GridBox<T> {
 	 */
 	private class Frame extends GridBox<T> {
 		private Frame() {
-			super(GridBox.this.getBoxSize(), GridBox.this.getSquareRadius());
+			super(GridBox.this.getBoxSize(), GridBox.this.getSquareRadius(), GridBox.this.offsetX, GridBox.this.offsetY);
 		}
 
 		@Override
