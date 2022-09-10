@@ -74,14 +74,15 @@ public class TerrainGenerator {
 		}
 
 		// extract river height
-		double riverHeight = closestPoint == null ? 0 : closestPoint.getHeight();
+		double riverHeight = closestPoint == null ? 0 : Math.max(0, closestPoint.getHeight());
 
 		// river dist
 		double riverDist = Math.sqrt(closestSqrDist);
 
 		// use riverHeight/baseHeight merger for true terrain height (can end up covering river intentionally as an indication to cut through.
 		// rivers are always expected to potentially cut so they can flow.
-		double terrainHeight = adjustTerrainHeight(riverDist, baseHeight, riverHeight);
+		// also dont move up under-ocean creating ridges as 'rivers'
+		double terrainHeight = Maths.clampMap(baseHeight, -2, 0, baseHeight, adjustTerrainHeight(riverDist, baseHeight, riverHeight));
 
 		// return values
 		heights[0] = terrainHeight;
