@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import valoeghese.khaki.mc.KhakiInitialiser;
 
 @Mixin(ChunkGenerators.class)
-public class MixinChunkGenerators {
+public class ChunkGeneratorsMixin {
 	@Inject(at = @At("RETURN"), method = "bootstrap")
 	private static void onBootstrap(Registry<Codec<? extends ChunkGenerator>> registry, CallbackInfoReturnable<Codec<? extends ChunkGenerator>> cir) {
 		KhakiInitialiser.onBootstrap(registry);

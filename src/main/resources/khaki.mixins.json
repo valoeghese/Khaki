@@ -3,7 +3,9 @@
   "package": "valoeghese.khaki.mc.mixins",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "MixinChunkGenerators"
+    "ChunkGeneratorAccessor",
+    "ChunkGeneratorsMixin",
+    "WorldGenSettingsMixin"
   ],
   "injectors": {
     "defaultRequire": 1
