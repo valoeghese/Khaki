@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.levelgen.Heightmap;
 import valoeghese.khaki.TerrainGenerator;
+import valoeghese.khaki.utils.Maths;
 
 public class KhakiMC {
 	public KhakiMC(long seed) {
@@ -63,7 +64,7 @@ public class KhakiMC {
 
 				final int terrainHeight = this.getTerrainHeight(x, z, this.fillChunkTerrainInfo);
 				final int surfaceHeight = Math.max(terrainHeight, getSeaLevel());
-				final int maxHeight = Math.min(chunk.getMaxBuildHeight(), surfaceHeight);
+				final int maxHeight = Maths.clamp(chunk.getMinBuildHeight(), chunk.getMaxBuildHeight(), surfaceHeight);
 
 				BlockState toSet;
 

@@ -24,6 +24,12 @@ public final class Maths {
 		return value;
 	}
 
+	public static int clamp(int min, int max, int value) {
+		if (value <= min) return min;
+		if (value >= max) return max;
+		return value;
+	}
+
 	public static int floor(double d) {
 		int i = (int) d;
 		return d < i ? i - 1 : i;
