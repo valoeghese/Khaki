@@ -13,6 +13,14 @@ public class KhakiMC {
 		System.out.println("Creating Khaki Terrain Generator with seed " + seed);
 		this.seed = seed;
 		this.terrain = new TerrainGenerator(seed);
+
+		// Initialise Settings
+		this.terrain.continentDiameter = 4000;
+		this.terrain.riverInterpolationSteps = 10;
+		this.terrain.mountainsPerRange = 11;
+		this.terrain.riverStep = 16;
+		this.terrain.riverCount = 10;
+		this.terrain.mergeThreshold = 12.0;
 	}
 
 	private final long seed;

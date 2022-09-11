@@ -23,22 +23,19 @@ public class PointCache<T> {
 	private final Operator<T> operator;
 
 	private int mask;
-	private volatile Point[] positions;
-	private volatile Object[] values;
-	private Object lock = new Object();
+	private Point[] positions;
+	private Object[] values;
 
-	public T sample(Point point) {
-		synchronized (lock) {
-			int loc = point.hashCode() & this.mask;
+	public synchronized T sample(Point point) {
+		int loc = point.hashCode() & this.mask;
 
-			if (point.equals(this.positions[loc])) {
-				System.out.printf("%s\tequals\t%s\twhere value is\t%s\n", point, this.positions[loc], this.values[loc]);
-				return (T) this.values[loc];
-			} else {
-				//System.out.println("NEW LOC " + point);
-				this.positions[loc] = point;
-				return (T) (this.values[loc] = this.operator.sample(point));
-			}
+		if (point.equals(this.positions[loc])) {
+			//System.out.printf("%s\tequals\t%s\twhere value is\t%s\n", point, this.positions[loc], this.values[loc]);
+			return (T) this.values[loc];
+		} else {
+			//System.out.println("NEW LOC " + point);
+			this.positions[loc] = point;
+			return (T) (this.values[loc] = this.operator.sample(point));
 		}
 	}
 
