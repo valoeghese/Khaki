@@ -120,8 +120,8 @@ public class Point {
 		} else if (o == null) {
 			return false;
 		} else if (o instanceof Point) {
-			Point vec2f = (Point) o;
-			return vec2f.x == this.x && vec2f.y == this.y;
+			Point point = (Point) o;
+			return point.x == this.x && point.y == this.y;
 		} else {
 			return false;
 		}

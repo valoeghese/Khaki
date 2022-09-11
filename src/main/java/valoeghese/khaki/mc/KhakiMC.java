@@ -10,6 +10,7 @@ import valoeghese.khaki.TerrainGenerator;
 
 public class KhakiMC {
 	public KhakiMC(long seed) {
+		System.out.println("Creating Khaki Terrain Generator with seed " + seed);
 		this.seed = seed;
 		this.terrain = new TerrainGenerator(seed);
 	}

@@ -61,23 +61,23 @@ public class TerrainGenerator {
 		double sqrDist = point.squaredDist(x, y);
 
 		final double continentRadius = this.continentDiameter * 0.5;
-		final double transitionMaxDist = continentRadius + 200;
+		final double transitionMinDist = continentRadius + 100;
+		final double transitionMaxDist = continentRadius + 300;
 
-		if (sqrDist <= continentRadius * continentRadius) {
-			ContinentData pregeneratedData = this.pregenDataCache.sample(point);
-			this.sampleContinentHeights(pregeneratedData, x, y, heights);
+		ContinentData pregeneratedData = this.pregenDataCache.sample(point);
+		this.sampleContinentHeights(pregeneratedData, x, y, heights);
+
+		if (sqrDist <= transitionMinDist * transitionMinDist) {
+			// No-op
 		}
 		else if (sqrDist <= transitionMaxDist * transitionMaxDist) {
-			ContinentData pregeneratedData = this.pregenDataCache.sample(point);
-			this.sampleContinentHeights(pregeneratedData, x, y, heights);
-
-			double progressOut = Maths.invLerp(Math.sqrt(sqrDist), continentRadius, transitionMaxDist);
-			heights[0] = Maths.lerp(progressOut, heights[0], -32.0);
+			double progressOut = Maths.invLerp(Math.sqrt(sqrDist), transitionMinDist, transitionMaxDist);
+			heights[0] = Maths.lerp(progressOut, heights[0], Math.min(-16.0, heights[0]));
 			heights[1] = Maths.lerp(progressOut, heights[1], 0);
 			heights[2] = heights[2] == Double.POSITIVE_INFINITY ? Double.POSITIVE_INFINITY : Maths.lerp(progressOut, heights[2], 100_000 /* arbitrary big value i can lerp with*/);
 		}
 		else {
-			heights[0] = Maths.clampMap(sqrDist, transitionMaxDist * transitionMaxDist, Maths.sqr(transitionMaxDist + 500), -32, -64);
+			heights[0] = Maths.clampMap(sqrDist, transitionMaxDist * transitionMaxDist, Maths.sqr(transitionMaxDist + 500),  Math.min(-16.0, heights[0]), -64);
 			heights[1] = 0;
 			heights[2] = Double.POSITIVE_INFINITY;
 		}
@@ -260,7 +260,7 @@ public class TerrainGenerator {
 		);
 	}
 
-	private ContinentData generateRivers(ContinentData continentData, Random rand) {
+	private ContinentData generateRivers(final ContinentData continentData, Random rand) {
 		// create river sources
 		Point start = continentData.mountains()[0];
 		Point end = continentData.mountains()[continentData.mountains().length - 1];
