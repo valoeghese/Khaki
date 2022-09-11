@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "khaki",
+  "version": "${version}",
+
+  "name": "Khaki",
+  "description": "River terrain gen prototype",
+  "authors": [
+    "Valoeghese"
+  ],
+
+  "license": "MIT",
+  "environment": "*",
+  
+  "entrypoints": {
+    "main": [
+      "valoeghese.khaki.mc.KhakiInitialiser"
+    ]
+  },
+  
+  "depends": {
+    "fabricloader": ">=0.4.0"
+  },
+  
+  "mixins": [
+    "khaki.mixins.json"
+  ]
+}

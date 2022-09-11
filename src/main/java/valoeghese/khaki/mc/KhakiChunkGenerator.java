@@ -3,18 +3,26 @@ package valoeghese.khaki.mc;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.server.level.WorldGenRegion;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LevelHeightAccessor;
+import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.NoiseColumn;
 import net.minecraft.world.level.StructureManager;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.biome.BiomeSource;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.RandomState;
+import net.minecraft.world.level.levelgen.RandomSupport;
+import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.blending.Blender;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
 
@@ -46,34 +54,56 @@ public class KhakiChunkGenerator extends ChunkGenerator {
 	}
 
 	@Override
-	public void buildSurface(WorldGenRegion level, StructureManager structureManager, RandomState random, ChunkAccess chunk) {
-		// Loop x/z and do it like the old days
-	}
-
-	@Override
-	public int getSpawnHeight(LevelHeightAccessor level) {
-		// TODO
-	}
-
-	@Override
 	public CompletableFuture<ChunkAccess> fillFromNoise(Executor executor, Blender blender, RandomState random, StructureManager structureManager, ChunkAccess chunk) {
-		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-		Heightmap heightmap = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.OCEAN_FLOOR_WG);
-		Heightmap heightmap2 = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.WORLD_SURFACE_WG);
+		Heightmap oceanFloorHeightmap = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.OCEAN_FLOOR_WG);
+		Heightmap surfaceHeightmap = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.WORLD_SURFACE_WG);
 
-		// TODO
+		this.khaki.fillChunk(chunk, surfaceHeightmap, oceanFloorHeightmap);
 
 		return CompletableFuture.completedFuture(chunk);
 	}
 
 	@Override
-	public int getBaseHeight(int x, int z, Heightmap.Types type, LevelHeightAccessor level, RandomState random) {
-		// TODO (dont bother accounting for rivers in ocean floor)
+	public void buildSurface(WorldGenRegion level, StructureManager structureManager, RandomState random, ChunkAccess chunk) {
+		ChunkPos pos = chunk.getPos();
+
+		// Loop x/z and do it like the old days
+		for (int x = pos.getMinBlockX(); x <= pos.getMaxBlockX(); x++)
+		{
+			for (int z = pos.getMinBlockZ(); z <= pos.getMaxBlockZ(); z++) {
+				this.khaki.genTerrainBlocks(chunk, x, z);
+			}
+		}
 	}
 
 	@Override
-	public NoiseColumn getBaseColumn(int x, int z, LevelHeightAccessor height, RandomState random) {
-		// TODO
+	public int getSpawnHeight(LevelHeightAccessor level) {
+		return getSeaLevel();
+	}
+
+	@Override
+	public int getBaseHeight(int x, int z, Heightmap.Types type, LevelHeightAccessor level, RandomState random) {
+		int terrainHeight = this.khaki.getTerrainHeight(x, z);
+
+		if (type.isOpaque().test(KhakiMC.WATER)) {
+			return Math.max(terrainHeight, getSeaLevel());
+		}
+		else {
+			return terrainHeight;
+		}
+	}
+
+	@Override
+	public NoiseColumn getBaseColumn(int x, int z, LevelHeightAccessor level, RandomState random) {
+		BlockState[] result = new BlockState[level.getHeight()];
+		int terrainHeight = this.khaki.getTerrainHeight(x, z);
+
+		for (int i = 0; i < level.getHeight(); i++) {
+			int y = i + level.getMinBuildHeight();
+			result[i] = y < terrainHeight ? KhakiMC.STONE : (y < getSeaLevel() ? KhakiMC.WATER : KhakiMC.AIR );
+		}
+
+		return new NoiseColumn(level.getMinBuildHeight(), result);
 	}
 
 	// Not necessary for prototype
@@ -88,13 +118,21 @@ public class KhakiChunkGenerator extends ChunkGenerator {
 
 	@Override
 	public void spawnOriginalMobs(WorldGenRegion level) {
+		// from NoiseBasedChunkGenerator
+		ChunkPos chunkPos = level.getCenter();
+		Holder<Biome> biome = level.getBiome(chunkPos.getWorldPosition().atY(level.getMaxBuildHeight() - 1));
+
+		WorldgenRandom rand = new WorldgenRandom(new LegacyRandomSource(RandomSupport.generateUniqueSeed()));
+		rand.setDecorationSeed(level.getSeed(), chunkPos.getMinBlockX(), chunkPos.getMinBlockZ());
+
+		NaturalSpawner.spawnMobsForChunkGeneration(level, biome, chunkPos, rand);
 	}
 
 	// pretty important stuff
 
 	@Override
 	public int getMinY() {
-		return -64;
+		return this.khaki.getMinY();
 	}
 
 	@Override
