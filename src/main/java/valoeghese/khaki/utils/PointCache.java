@@ -23,8 +23,8 @@ public class PointCache<T> {
 	private final Operator<T> operator;
 
 	private int mask;
-	private Point[] positions;
-	private Object[] values;
+	private volatile Point[] positions;
+	private volatile Object[] values;
 	private Object lock = new Object();
 
 	public T sample(Point point) {
@@ -32,7 +32,7 @@ public class PointCache<T> {
 			int loc = point.hashCode() & this.mask;
 
 			if (point.equals(this.positions[loc])) {
-				System.out.printf("%s\tequals\t%s\n", point, this.positions[loc]);
+				System.out.printf("%s\tequals\t%s\twhere value is\t%s\n", point, this.positions[loc], this.values[loc]);
 				return (T) this.values[loc];
 			} else {
 				//System.out.println("NEW LOC " + point);
