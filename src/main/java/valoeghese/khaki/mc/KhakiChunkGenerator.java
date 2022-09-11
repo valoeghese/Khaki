@@ -58,7 +58,10 @@ public class KhakiChunkGenerator extends ChunkGenerator {
 		Heightmap oceanFloorHeightmap = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.OCEAN_FLOOR_WG);
 		Heightmap surfaceHeightmap = chunk.getOrCreateHeightmapUnprimed(Heightmap.Types.WORLD_SURFACE_WG);
 
-		this.khaki.fillChunk(chunk, surfaceHeightmap, oceanFloorHeightmap);
+		ChunkPos chunkPos = chunk.getPos();
+
+		this.khaki.fillChunk(chunk, chunkPos, surfaceHeightmap, oceanFloorHeightmap);
+		this.khaki.addRiverDecoration(chunk, chunkPos, surfaceHeightmap, oceanFloorHeightmap);
 
 		return CompletableFuture.completedFuture(chunk);
 	}

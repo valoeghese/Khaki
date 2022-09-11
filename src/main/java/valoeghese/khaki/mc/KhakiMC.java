@@ -29,6 +29,11 @@ public class KhakiMC {
 		return 1 + getMinY() + (int) terrainInfo[0];
 	}
 
+	private int getRiverHeight(int x, int z, double[] terrainInfo) {
+		this.terrain.sampleHeight(x, z, terrainInfo);
+		return 1 + getMinY() + (int) terrainInfo[1];
+	}
+
 	public int getMinY() {
 		return -64;
 	}
@@ -38,8 +43,7 @@ public class KhakiMC {
 	}
 
 	// Chunk filling. In a CC compatible way
-	public void fillChunk(ChunkAccess chunk, Heightmap surfaceHeightmap, Heightmap oceanFloorHeightmap) {
-		ChunkPos chunkPos = chunk.getPos();
+	public void fillChunk(ChunkAccess chunk, ChunkPos chunkPos, Heightmap surfaceHeightmap, Heightmap oceanFloorHeightmap) {
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
 		for (int x = chunkPos.getMinBlockX(); x <= chunkPos.getMaxBlockX(); x++) {
@@ -72,6 +76,50 @@ public class KhakiMC {
 		}
 	}
 
+	public void addRiverDecoration(ChunkAccess chunk, ChunkPos chunkPos, Heightmap surfaceHeightmap, Heightmap oceanFloorHeightmap) {
+		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+
+		for (int x = chunkPos.getMinBlockX(); x <= chunkPos.getMaxBlockX(); x++) {
+			pos.setX(x);
+
+			for (int z = chunkPos.getMinBlockZ(); z <= chunkPos.getMaxBlockZ(); z++) {
+				pos.setZ(z);
+
+				final int riverHeight = this.getRiverHeight(x, z, this.fillChunkTerrainInfo);
+				final double riverDist = this.fillChunkTerrainInfo[2];
+				final int riverWidth = 4;
+
+				if (riverDist <= riverWidth * riverWidth) {
+					final int yVariation = (int) (0.5 * Math.sqrt(riverWidth * riverWidth - riverDist * riverDist));
+					int y;
+
+					for (y = riverHeight + yVariation - 1; y >= riverHeight - yVariation; y--) {
+						if (y < chunk.getMinBuildHeight() || y >= chunk.getMaxBuildHeight()) continue;
+
+						pos.setY(y);
+						BlockState toSet = y < riverHeight - 1 ? WATER : AIR;
+
+						chunk.setBlockState(pos, toSet, false);
+						surfaceHeightmap.update(x, y, z, toSet);
+						oceanFloorHeightmap.update(x, y, z, toSet);
+					}
+
+					if (y >= chunk.getMinBuildHeight() && y < chunk.getMaxBuildHeight()) {
+						pos.setY(y);
+						BlockState state = chunk.getBlockState(pos);
+
+						// gravel floor and sides
+						if (state == STONE) {
+							chunk.setBlockState(pos, GRAVEL, false);
+							surfaceHeightmap.update(x, y, z, GRAVEL);
+							oceanFloorHeightmap.update(x, y, z, GRAVEL);
+						}
+					}
+				}
+			}
+		}
+	}
+
 	public void genTerrainBlocks(ChunkAccess chunk, int x, int z) {
 		int topBlockY = this.getTerrainHeight(x, z, this.buildSurfaceTerrainInfo) - 1;
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, 0, z);
@@ -94,10 +142,9 @@ public class KhakiMC {
 	private static final BlockState GRASS_BLOCK = Blocks.GRASS_BLOCK.defaultBlockState();
 	private static final BlockState DIRT = Blocks.DIRT.defaultBlockState();
 	private static final BlockState SAND = Blocks.SAND.defaultBlockState();
+	private static final BlockState GRAVEL = Blocks.GRAVEL.defaultBlockState();
 	private static final BlockState SANDSTONE = Blocks.SMOOTH_SANDSTONE.defaultBlockState();
 	static final BlockState STONE = Blocks.STONE.defaultBlockState();
 	static final BlockState WATER = Blocks.WATER.defaultBlockState();
 	static final BlockState AIR = Blocks.AIR.defaultBlockState();
-
-	// TODO river feature (carver). Probably make a nested non-static class
 }
