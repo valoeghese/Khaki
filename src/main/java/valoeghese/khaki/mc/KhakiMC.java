@@ -36,12 +36,12 @@ public class KhakiMC {
 
 	private int getTerrainHeight(int x, int z, double[] terrainInfo) {
 		this.terrain.sampleHeight(x, z, terrainInfo);
-		return 1 + getSeaLevel() + (int) terrainInfo[0];
+		return 1 + getSeaLevel() + Maths.floor(terrainInfo[0]);
 	}
 
 	private int getRiverHeight(int x, int z, double[] terrainInfo) {
 		this.terrain.sampleHeight(x, z, terrainInfo);
-		return 1 + getSeaLevel() + (int) terrainInfo[1];
+		return 1 + getSeaLevel() + Maths.floor(terrainInfo[1]);
 	}
 
 	public int getMinY() {
@@ -54,6 +54,7 @@ public class KhakiMC {
 
 	// Chunk filling. In a CC compatible way
 	public void fillChunk(ChunkAccess chunk, ChunkPos chunkPos, Heightmap surfaceHeightmap, Heightmap oceanFloorHeightmap) {
+		final int seaLevel = getSeaLevel();
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
 
 		for (int x = chunkPos.getMinBlockX(); x <= chunkPos.getMaxBlockX(); x++) {
@@ -62,10 +63,9 @@ public class KhakiMC {
 			for (int z = chunkPos.getMinBlockZ(); z <= chunkPos.getMaxBlockZ(); z++) {
 				pos.setZ(z);
 
-
 				final int terrainHeight = this.getTerrainHeight(x, z, this.fillChunkTerrainInfo);
-				final int surfaceHeight = Math.max(terrainHeight, getSeaLevel());
-				final int maxHeight = Maths.clamp(chunk.getMinBuildHeight(), chunk.getMaxBuildHeight(), surfaceHeight);
+				final int surfaceHeight = Math.max(terrainHeight, seaLevel);
+				final int maxHeight = Maths.clamp(chunk.getMinBuildHeight(), chunk.getMaxBuildHeight() - 1, surfaceHeight);
 
 				BlockState toSet;
 
@@ -75,8 +75,12 @@ public class KhakiMC {
 					if (y < terrainHeight) {
 						toSet = STONE;
 					}
-					else {
+					else if (y < seaLevel) {
 						toSet = WATER;
+					}
+					else {
+						// in case
+						toSet = AIR;
 					}
 
 					chunk.setBlockState(pos, toSet, false);
@@ -99,31 +103,33 @@ public class KhakiMC {
 				final int riverHeight = this.getRiverHeight(x, z, this.fillChunkTerrainInfo);
 				final double riverDist = this.fillChunkTerrainInfo[2];
 				final int riverWidth = 4;
+				final int cutWidth = riverWidth + 2;
 
-				if (riverDist <= riverWidth * riverWidth) {
-					final int yVariation = (int) (0.5 * Math.sqrt(riverWidth * riverWidth - riverDist * riverDist));
+				if (riverDist <= cutWidth) {
+					final int yVariation = (int) (0.75 * Math.sqrt(riverWidth * riverWidth - riverDist * riverDist));
 					int y;
 
-					for (y = riverHeight + yVariation - 1; y >= riverHeight - yVariation; y--) {
+					for (y = riverHeight + yVariation; y >= riverHeight - yVariation - 1; y--) {
 						if (y < chunk.getMinBuildHeight() || y >= chunk.getMaxBuildHeight()) continue;
 
 						pos.setY(y);
 						BlockState toSet = y < riverHeight - 1 ? WATER : AIR;
 
 						chunk.setBlockState(pos, toSet, false);
-						surfaceHeightmap.update(x, y, z, toSet);
-						oceanFloorHeightmap.update(x, y, z, toSet);
+						surfaceHeightmap.update(x & 0xF, y, z & 0xF, toSet);
+						oceanFloorHeightmap.update(x & 0xF, y, z & 0xF, toSet);
 					}
 
+					// always place gravel below rivers & other cut bits
 					if (y >= chunk.getMinBuildHeight() && y < chunk.getMaxBuildHeight()) {
 						pos.setY(y);
 						BlockState state = chunk.getBlockState(pos);
 
 						// gravel floor and sides
-						if (state == STONE) {
+						if (state == STONE && y >= getSeaLevel()) {
 							chunk.setBlockState(pos, GRAVEL, false);
-							surfaceHeightmap.update(x, y, z, GRAVEL);
-							oceanFloorHeightmap.update(x, y, z, GRAVEL);
+							surfaceHeightmap.update(x & 0xF, y, z & 0xF, GRAVEL);
+							oceanFloorHeightmap.update(x & 0xF, y, z & 0xF, GRAVEL);
 						}
 					}
 				}
@@ -133,6 +139,7 @@ public class KhakiMC {
 
 	public void genTerrainBlocks(ChunkAccess chunk, int x, int z) {
 		int topBlockY = this.getTerrainHeight(x, z, this.buildSurfaceTerrainInfo) - 1;
+		final double riverDist = this.buildSurfaceTerrainInfo[2];
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, 0, z);
 
 		for (int y = chunk.getMaxBuildHeight() - 1; y >= chunk.getMinBuildHeight(); y--) {
@@ -141,7 +148,7 @@ public class KhakiMC {
 
 			if (currentState == STONE) {
 				if (y == topBlockY) {
-					chunk.setBlockState(pos, topBlockY <= getSeaLevel() ? SAND : GRASS_BLOCK, false);
+					chunk.setBlockState(pos, topBlockY <= getSeaLevel() ? SAND : (riverDist < 8 ? GRAVEL : GRASS_BLOCK), false);
 				}
 				else if (y >= topBlockY - 3) {
 					chunk.setBlockState(pos, topBlockY <= getSeaLevel() ? SANDSTONE : DIRT, false);
