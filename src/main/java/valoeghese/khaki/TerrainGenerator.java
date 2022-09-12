@@ -154,8 +154,10 @@ public class TerrainGenerator {
 				+ 30 * this.noise.sample(x * BASE_DISTORT_FREQUENCY, y * BASE_DISTORT_FREQUENCY)
 		);
 
-		// MC Edit: add hills based on height, not directly radial
-		height += Maths.clampMap(height, 0, 20, 0, 30) * Math.max(0, this.noise.sample(x * BASE_HILLS_FREQUENCY, y * BASE_HILLS_FREQUENCY)); // hills
+		// MC Edit: add hills based on height, not directly radial, and add second lot of hills
+
+		height += Maths.clampMap(height, 0, 15, 0, 30) * Math.max(0, this.noise.sample(x * BASE_HILLS_FREQUENCY, y * BASE_HILLS_FREQUENCY)); // hills
+		height += Maths.clampMap(height, 0, 10, 0, Maths.clampMap(height, 40, 80, 25.0 / 2, 4.0 / 2)) * (1.0 + this.noise.sample(x * SMALL_HILLS_FREQUENCY, y * SMALL_HILLS_FREQUENCY)); // hills 2
 
 		// ======== MOUNTAINS ==========
 
@@ -749,7 +751,8 @@ public class TerrainGenerator {
 
 	private static final Node DUMMY_NODE = new Node(Point.NONE, Point.NONE);
 	public static final double BASE_DISTORT_FREQUENCY = 1.0 / 850.0;
-	public static final double BASE_HILLS_FREQUENCY = 1.0 / 300.0;
+	public static final double BASE_HILLS_FREQUENCY = 1.0 / 250.0;
+	public static final double SMALL_HILLS_FREQUENCY = 1.0 / 90.0;
 	public static final int GRID_BOX_SIZE = 64;
 
 	private static final double maxInterpolateRadius = 56.0; // 32 + 16 + 8. still chosen arbitrarily. needed to be <= 64, the grid box size, but could still have some funny cases if it's larger as proven by my jittered grid voronoi algorithm searching a bit further!

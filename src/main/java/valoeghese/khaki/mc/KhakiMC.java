@@ -49,6 +49,10 @@ public class KhakiMC {
 		return 1 + getSeaLevel() + Maths.floor(terrainInfo[1]);
 	}
 
+	private int extractRiverHeight(double[] terrainInfo) {
+		return 1 + getSeaLevel() + Maths.floor(terrainInfo[1]);
+	}
+
 	public int getMinY() {
 		return -64;
 	}
@@ -98,6 +102,7 @@ public class KhakiMC {
 
 	public void addRiverDecoration(ChunkAccess chunk, ChunkPos chunkPos, Heightmap surfaceHeightmap, Heightmap oceanFloorHeightmap) {
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+		final int seaLevel = getSeaLevel();
 
 		for (int x = chunkPos.getMinBlockX(); x <= chunkPos.getMaxBlockX(); x++) {
 			pos.setX(x);
@@ -107,7 +112,8 @@ public class KhakiMC {
 
 				final int riverHeight = this.getRiverHeight(x, z, this.fillChunkTerrainInfo);
 				final double riverDist = this.fillChunkTerrainInfo[2];
-				final int riverWidth = (int) Maths.clampMap(riverHeight, 150,200, 4, 2);
+				final int riverWidth = (int) this.getRiverWidth(riverHeight);
+
 				final int cutWidth = riverWidth + 4;
 
 				if (riverDist <= cutWidth) {
@@ -115,7 +121,7 @@ public class KhakiMC {
 					int y;
 
 					for (y = riverHeight + yVariation; y >= riverHeight - yVariation - 1; y--) {
-						if (y < chunk.getMinBuildHeight() || y >= chunk.getMaxBuildHeight()) continue;
+						if (y < chunk.getMinBuildHeight() || y >= chunk.getMaxBuildHeight() || y < seaLevel - 2) continue;
 
 						pos.setY(y);
 						BlockState toSet = y < riverHeight - 1 ? WATER : AIR;
@@ -126,7 +132,7 @@ public class KhakiMC {
 					}
 
 					// always place gravel below rivers & other cut bits
-					if (y >= chunk.getMinBuildHeight() && y < chunk.getMaxBuildHeight()) {
+					if (y >= chunk.getMinBuildHeight() && y < chunk.getMaxBuildHeight() && y >= seaLevel - 2) {
 						pos.setY(y);
 						BlockState state = chunk.getBlockState(pos);
 
@@ -142,8 +148,25 @@ public class KhakiMC {
 		}
 	}
 
+	private double getRiverWidth(int riverHeight) {
+		if (riverHeight < 100) {
+			return Maths.clampMap(riverHeight, 30,100, 7, 4);
+		}
+		else if (riverHeight > 180) {
+			return Maths.clampMap(riverHeight, 180,210, 4, 2);
+		}
+		else {
+			return 4;
+		}
+	}
+
 	public void genTerrainBlocks(ChunkAccess chunk, int x, int z) {
 		int topBlockY = this.getTerrainHeight(x, z, this.buildSurfaceTerrainInfo) - 1;
+		int riverHeight = this.extractRiverHeight(this.buildSurfaceTerrainInfo);
+
+		double gravelWidth = this.getRiverWidth(riverHeight);
+		gravelWidth += 4 + Maths.clampMap(gravelWidth, 2, 4, 0, 4);
+
 		final double riverDist = this.buildSurfaceTerrainInfo[2];
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(x, 0, z);
 
@@ -153,7 +176,7 @@ public class KhakiMC {
 
 			if (currentState == STONE) {
 				if (y == topBlockY) {
-					chunk.setBlockState(pos, topBlockY <= getSeaLevel() ? SAND : (riverDist < 12 ? GRAVEL : GRASS_BLOCK), false);
+					chunk.setBlockState(pos, topBlockY <= getSeaLevel() ? SAND : (riverDist < gravelWidth && topBlockY <= riverHeight + 1 ? GRAVEL : GRASS_BLOCK), false);
 				}
 				else if (y >= topBlockY - 3) {
 					chunk.setBlockState(pos, topBlockY <= getSeaLevel() ? SANDSTONE : DIRT, false);
