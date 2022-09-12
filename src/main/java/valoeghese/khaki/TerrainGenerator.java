@@ -152,8 +152,10 @@ public class TerrainGenerator {
 		double height = Maths.clamp(-64, 256, 0
 				+ 60 * (radial - 0.2)
 				+ 30 * this.noise.sample(x * BASE_DISTORT_FREQUENCY, y * BASE_DISTORT_FREQUENCY)
-				+ 30 * radial * Math.max(0, this.noise.sample(x * BASE_HILLS_FREQUENCY, y * BASE_HILLS_FREQUENCY)) // hills
 		);
+
+		// MC Edit: add hills based on height, not directly radial
+		height += Maths.clampMap(height, 0, 20, 0, 30) * Math.max(0, this.noise.sample(x * BASE_HILLS_FREQUENCY, y * BASE_HILLS_FREQUENCY)); // hills
 
 		// ======== MOUNTAINS ==========
 
@@ -309,7 +311,7 @@ public class TerrainGenerator {
 				// leave if in the ocean.
 				// might have to stretch a bit further in the future just in case but she'll be right bro
 				// intellij really thinks it's the CEO of english grammar huh
-				if (h < -1) { // just in case ?!
+				if (h < -2) { // Edit for MC: just in case ?!
 					break;
 				}
 
