@@ -6,6 +6,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.levelgen.Heightmap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import valoeghese.khaki.TerrainGenerator;
 import valoeghese.khaki.utils.Maths;
 
@@ -14,6 +16,7 @@ public class KhakiMC {
 		System.out.println("Creating Khaki Terrain Generator with seed " + seed);
 		this.seed = seed;
 		this.terrain = new TerrainGenerator(seed);
+		this.logger = LoggerFactory.getLogger("KhakiMC @" + this.seed);
 
 		// Initialise Settings
 		this.terrain.continentDiameter = 4000;
@@ -22,8 +25,10 @@ public class KhakiMC {
 		this.terrain.riverStep = 16;
 		this.terrain.riverCount = 10;
 		this.terrain.mergeThreshold = 12.0;
+		this.terrain.warn = this.logger::warn;
 	}
 
+	private final Logger logger;
 	private final long seed;
 	private final TerrainGenerator terrain;
 	private double[] fillChunkTerrainInfo = new double[3];
@@ -102,8 +107,8 @@ public class KhakiMC {
 
 				final int riverHeight = this.getRiverHeight(x, z, this.fillChunkTerrainInfo);
 				final double riverDist = this.fillChunkTerrainInfo[2];
-				final int riverWidth = 4;
-				final int cutWidth = riverWidth + 2;
+				final int riverWidth = (int) Maths.clampMap(riverHeight, 150,200, 4, 2);
+				final int cutWidth = riverWidth + 4;
 
 				if (riverDist <= cutWidth) {
 					final int yVariation = (int) (0.75 * Math.sqrt(riverWidth * riverWidth - riverDist * riverDist));
@@ -148,7 +153,7 @@ public class KhakiMC {
 
 			if (currentState == STONE) {
 				if (y == topBlockY) {
-					chunk.setBlockState(pos, topBlockY <= getSeaLevel() ? SAND : (riverDist < 8 ? GRAVEL : GRASS_BLOCK), false);
+					chunk.setBlockState(pos, topBlockY <= getSeaLevel() ? SAND : (riverDist < 12 ? GRAVEL : GRASS_BLOCK), false);
 				}
 				else if (y >= topBlockY - 3) {
 					chunk.setBlockState(pos, topBlockY <= getSeaLevel() ? SANDSTONE : DIRT, false);

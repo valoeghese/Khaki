@@ -309,7 +309,7 @@ public class TerrainGenerator {
 				// leave if in the ocean.
 				// might have to stretch a bit further in the future just in case but she'll be right bro
 				// intellij really thinks it's the CEO of english grammar huh
-				if (h < 0) {
+				if (h < -1) { // just in case ?!
 					break;
 				}
 
