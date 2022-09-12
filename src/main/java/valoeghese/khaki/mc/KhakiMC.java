@@ -62,6 +62,7 @@ public class KhakiMC {
 			for (int z = chunkPos.getMinBlockZ(); z <= chunkPos.getMaxBlockZ(); z++) {
 				pos.setZ(z);
 
+
 				final int terrainHeight = this.getTerrainHeight(x, z, this.fillChunkTerrainInfo);
 				final int surfaceHeight = Math.max(terrainHeight, getSeaLevel());
 				final int maxHeight = Maths.clamp(chunk.getMinBuildHeight(), chunk.getMaxBuildHeight(), surfaceHeight);
@@ -79,7 +80,7 @@ public class KhakiMC {
 					}
 
 					chunk.setBlockState(pos, toSet, false);
-					surfaceHeightmap.update(x & 0xF, y & 0xF, z, toSet);
+					surfaceHeightmap.update(x & 0xF, y, z & 0xF, toSet);
 					oceanFloorHeightmap.update(x & 0xF, y, z & 0xF, toSet);
 				}
 			}
