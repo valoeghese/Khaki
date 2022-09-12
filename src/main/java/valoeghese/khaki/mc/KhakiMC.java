@@ -36,12 +36,12 @@ public class KhakiMC {
 
 	private int getTerrainHeight(int x, int z, double[] terrainInfo) {
 		this.terrain.sampleHeight(x, z, terrainInfo);
-		return 1 + getMinY() + (int) terrainInfo[0];
+		return 1 + getSeaLevel() + (int) terrainInfo[0];
 	}
 
 	private int getRiverHeight(int x, int z, double[] terrainInfo) {
 		this.terrain.sampleHeight(x, z, terrainInfo);
-		return 1 + getMinY() + (int) terrainInfo[1];
+		return 1 + getSeaLevel() + (int) terrainInfo[1];
 	}
 
 	public int getMinY() {
@@ -79,8 +79,8 @@ public class KhakiMC {
 					}
 
 					chunk.setBlockState(pos, toSet, false);
-					surfaceHeightmap.update(x, y, z, toSet);
-					oceanFloorHeightmap.update(x, y, z, toSet);
+					surfaceHeightmap.update(x & 0xF, y & 0xF, z, toSet);
+					oceanFloorHeightmap.update(x & 0xF, y, z & 0xF, toSet);
 				}
 			}
 		}
